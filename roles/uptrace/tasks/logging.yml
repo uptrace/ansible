@@ -1,0 +1,10 @@
+- name: copy rsyslog config
+  template:
+    src: rsyslog.conf
+    dest: /etc/rsyslog.d/49-uptrace.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: restart rsyslog
+  service: name=rsyslog state=restarted

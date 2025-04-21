@@ -1,0 +1,32 @@
+# http://lzone.de/cheat-sheet/ulimit
+
+- name: increase global number of open files limit (on filesystem level)
+  sysctl: name=fs.file-max value=512000
+  tags: [sysctl]
+
+- name: increase per-process number of files soft limit for all users
+  lineinfile:
+    dest: /etc/security/limits.conf
+    regexp: '^\*\s+soft\s+nofile'
+    line: "* soft nofile 128000"
+
+- name: increase per-process number of files hard limit for all users
+  lineinfile:
+    dest: /etc/security/limits.conf
+    regexp: '^\*\s+hard\s+nofile'
+    line: "* hard nofile 128000"
+
+# Wildcard limits are not applied to root (see man limits.conf).
+# So repeat rules for root.
+
+- name: increase per-process number of files soft limit for root
+  lineinfile:
+    dest: /etc/security/limits.conf
+    regexp: '^root\s+soft\s+nofile'
+    line: "root soft nofile 128000"
+
+- name: increase per-process number of files hard limit for root
+  lineinfile:
+    dest: /etc/security/limits.conf
+    regexp: '^root\s+hard\s+nofile'
+    line: "root hard nofile 128000"

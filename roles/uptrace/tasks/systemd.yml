@@ -1,0 +1,10 @@
+- name: upload uptrace systemd
+  template:
+    src: '{{ item }}'
+    dest: /lib/systemd/system/{{ item }}
+  loop:
+    - uptrace.service
+
+- name: restart uptrace
+  systemd: name=uptrace.service state=restarted enabled=yes daemon_reload=yes
+  throttle: 1

@@ -1,0 +1,26 @@
+- name: add apt key
+  apt_key:
+    keyserver: hkp://keyserver.ubuntu.com:80
+    id: 8919F6BD2B48D754
+
+- name: add apt repo
+  apt_repository:
+    repo: deb https://packages.clickhouse.com/deb stable main
+    state: present
+
+- name: install clickhouse
+  apt:
+    name:
+      - clickhouse-common-static={{ ch_version }}
+      - clickhouse-client={{ ch_version }}
+      - clickhouse-server={{ ch_version }}
+    allow_downgrade: yes
+    update_cache: yes
+
+- name: pin clickhouse
+  template:
+    src: clickhouse.pin
+    dest: /etc/apt/preferences.d/clickhouse
+    owner: root
+    group: root
+    mode: 0644

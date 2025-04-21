@@ -1,0 +1,20 @@
+[Unit]
+Description = uptrace
+After       = network.target
+
+[Service]
+Type  = simple
+User  = uptrace
+Group = uptrace
+
+ExecStart = /usr/local/bin/uptrace -config=/etc/uptrace/config.yml serve
+Restart    = always
+RestartSec = 1s
+
+WorkingDirectory    = /var/lib/uptrace
+AmbientCapabilities = CAP_NET_BIND_SERVICE
+LimitNOFILE         = 64000
+SyslogIdentifier    = uptrace
+
+[Install]
+WantedBy = multi-user.target

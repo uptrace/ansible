@@ -1,0 +1,58 @@
+- set_fact:
+    pgbouncer_connections: '{{ [2, ansible_processor_vcpus*2] | max }}'
+    shared_buffers: '{{ ansible_memtotal_mb // 10 }}'
+    work_mem: '{{ ansible_memtotal_mb // 16 }}'
+    maintenance_work_mem: '{{ [ansible_memtotal_mb // 8, 1024] | min }}'
+    effective_cache_size: '{{ ansible_memtotal_mb // 2 }}'
+  tags: [always]
+
+- command: ls /var/lib/postgresql
+  register: ls
+  ignore_errors: yes
+
+- import_tasks: install.yml
+  when: ls is not defined or ls is failed
+  tags: [install]
+
+- name: start PostgreSQL
+  service: name=postgresql state=started enabled=yes
+
+- name: install postgresql_* playbooks dependencies
+  apt: name=python3-psycopg2
+
+- import_tasks: setup_db.yml
+  when: db_slaveof is not defined
+
+- name: upload postgresql.conf
+  template:
+    src: '{{ pg_version }}/postgresql.conf'
+    dest: /etc/postgresql/{{ pg_version }}/main/
+    mode: 0640
+    owner: postgres
+    group: postgres
+  tags: [config]
+
+- name: standby.signal
+  file:
+    path: /var/lib/postgresql/{{ pg_version }}/main/standby.signal
+    state: touch
+    mode: '0644'
+    owner: postgres
+    group: postgres
+  when: db_slaveof is defined
+
+- import_tasks: pgbouncer.yml
+  tags: [pgbouncer]
+
+- name: upload pg_hba.conf
+  template:
+    src: pg_hba.conf
+    dest: /etc/postgresql/{{ pg_version }}/main/
+    owner: postgres
+    group: postgres
+    mode: 0640
+  tags: [config]
+
+- name: restart PostgreSQL
+  service: name=postgresql state=restarted
+  tags: [config, systemd]

@@ -1,0 +1,22 @@
+<!-- Config set into /etc/clickhouse-client/. It's used if no other configs are found. -->
+<config>
+  <openSSL>
+    <client>
+      <loadDefaultCAFile>false</loadDefaultCAFile>
+      <caConfig>/etc/clickhouse/certs/Uptrace_CA.crt</caConfig>
+      <cacheSessions>true</cacheSessions>
+      <disableProtocols>sslv2,sslv3</disableProtocols>
+      <preferServerCiphers>true</preferServerCiphers>
+      <invalidCertificateHandler>
+        <name>RejectCertificateHandler</name>
+      </invalidCertificateHandler>
+    </client>
+  </openSSL>
+
+  <host>127.0.0.1</host>
+  <port>9440</port>
+  <secure>1</secure>
+  <user>default</user>
+  <password></password>
+  <receive_timeout>999999</receive_timeout>
+</config>

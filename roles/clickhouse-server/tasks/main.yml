@@ -1,0 +1,8 @@
+- import_tasks: config.yml
+  tags: [config]
+
+- name: start ClickHouse
+  systemd: name=clickhouse-server state=started daemon_reload=true
+
+- name: create database
+  command: clickhouse-client -q "CREATE DATABASE IF NOT EXISTS {{ ch_db_name }}"

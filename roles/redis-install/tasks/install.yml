@@ -1,0 +1,4 @@
+- name: install Redis
+  apt:
+    name:
+      - redis

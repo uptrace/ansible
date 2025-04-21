@@ -1,0 +1,26 @@
+- name: create keeper dirs
+  file: path={{ item }} state=directory owner=clickhouse group=clickhouse mode=0755
+  loop:
+    - /etc/clickhouse-keeper
+    - /var/lib/clickhouse-keeper
+
+- name: upload config
+  template:
+    src: keeper_config.xml
+    dest: /etc/clickhouse-keeper/keeper_config.xml
+    owner: clickhouse
+    group: clickhouse
+    mode: 0644
+
+- name: start clickhouse-keeper
+  systemd:
+    name: clickhouse-keeper
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: disable clickhouse-server
+  systemd:
+    name: clickhouse-server
+    enabled: no
+  when: "'clickhouse' not in group_names"

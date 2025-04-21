@@ -1,0 +1,23 @@
+- name: install pgbouncer
+  apt: pkg=pgbouncer
+
+- name: create pgbouncer config dir
+  file: path=/etc/pgbouncer state=directory owner=postgres group=postgres mode=0755
+
+- name: copy pgbouncer config
+  template: src={{ item }} dest=/etc/pgbouncer/ owner=postgres group=postgres mode=0640
+  loop:
+    - pgbouncer.ini
+    - userlist.txt
+  tags: [pgbouncer_config]
+
+- name: configure Pgbouncer service
+  template:
+    src: pgbouncer.service
+    dest: /lib/systemd/system/pgbouncer.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: restart pgbouncer
+  systemd: name=pgbouncer state=restarted enabled=yes daemon_reload=yes

@@ -1,0 +1,7 @@
+- hosts: clickhouse_keeper
+  become: yes
+
+  roles:
+    - { role: clickhouse-install }
+    - { role: clickhouse-certs }
+    - { role: clickhouse-keeper, tags: [keeper] }

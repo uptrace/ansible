@@ -1,0 +1,31 @@
+uptrace:
+  hosts:
+    10.10.1.1: { primary: true }
+
+postgresql:
+  hosts:
+    10.10.1.1:
+
+redis:
+  children:
+    redis_cache:
+
+redis_cache:
+  hosts:
+    10.10.1.1: { redis_node_id: alpha, redis_maxmemory_mb: 128 }
+
+clickhouse:
+  children:
+    clickhouse_server:
+    clickhouse_keeper:
+
+clickhouse_server:
+  hosts:
+    10.10.1.1:
+      ch_cluster: uptrace1
+      ch_shard: shard1
+      ch_replica: replica1
+
+clickhouse_keeper:
+  hosts:
+    10.10.1.1: { keeper_id: 1 }

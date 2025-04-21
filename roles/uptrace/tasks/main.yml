@@ -1,0 +1,48 @@
+- name: create uptrace user
+  user: name=uptrace groups=sudo shell=/bin/bash
+
+- name: create Uptrace data directory
+  file: path=/var/lib/uptrace/ state=directory owner=uptrace group=uptrace mode=0755
+
+- name: create Uptrace config directory
+  file: path=/etc/uptrace/ state=directory owner=uptrace group=uptrace mode=0755
+
+- name: record DEB architecture
+  shell: dpkg --print-architecture
+  register: arch
+
+- name: download Uptrace
+  get_url:
+    url: https://github.com/uptrace/uptrace/releases/download/v{{uptrace_version}}/uptrace_linux_{{arch.stdout}}
+    dest: /usr/local/bin/uptrace
+    owner: uptrace
+    group: uptrace
+    mode: 0755
+
+- name: check Uptrace binary
+  command: /usr/local/bin/uptrace version
+
+- name: upload Uptrace config
+  template:
+    src: config.yml
+    dest: /etc/uptrace/config.yml
+    owner: uptrace
+    group: uptrace
+    mode: 0644
+  tags: [config]
+
+- import_tasks: systemd.yml
+  tags: [systemd]
+
+- import_tasks: logging.yml
+  tags: [logging]
+
+- cron:
+    name: retention_check
+    job:
+      /usr/bin/flock /var/lock/uptrace_retention.lock /usr/local/bin/uptrace
+      -config=/etc/uptrace/config.yml retention check
+    weekday: '6' # Saturday
+    hour: '0'
+    minute: '15'
+  when: uptrace_license is defined

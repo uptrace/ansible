@@ -1,0 +1,5 @@
+- name: install common software
+  apt:
+    name:
+      - apt-transport-https
+      - python3-pip

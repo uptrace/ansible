@@ -1,0 +1,57 @@
+#jinja2: trim_blocks:False
+<?xml version="1.0"?>
+<clickhouse>
+  <listen_host>::</listen_host>
+  <timezone>UTC</timezone>
+
+  <logger>
+    <level>debug</level>
+    <log>/var/log/clickhouse-keeper/clickhouse-keeper.log</log>
+    <errorlog>/var/log/clickhouse-keeper/clickhouse-keeper.err.log</errorlog>
+    <size>100M</size>
+    <count>5</count>
+  </logger>
+
+  <max_connections>4096</max_connections>
+
+  <keeper_server>
+    <tcp_port>9181</tcp_port>
+    <tcp_port_secure>9281</tcp_port_secure>
+    <server_id>{{ keeper_id }}</server_id>
+
+    <log_storage_path>/var/lib/clickhouse-keeper/log</log_storage_path>
+    <snapshot_storage_path>/var/lib/clickhouse-keeper/snapshots</snapshot_storage_path>
+
+    <coordination_settings>
+      <session_timeout_ms>100000</session_timeout_ms>
+      <min_session_timeout_ms>10000</min_session_timeout_ms>
+      <operation_timeout_ms>30000</operation_timeout_ms>
+      <raft_logs_level>information</raft_logs_level>
+    </coordination_settings>
+
+    <hostname_checks_enabled>true</hostname_checks_enabled>
+    <raft_configuration>
+{%- for host in groups['clickhouse_keeper'] %}
+      <server>
+        <!-- id and hostname combination must be consistent -->
+        <id>{{ hostvars[host].keeper_id }}</id>
+        <hostname>{{ hostvars[host].inventory_hostname }}</hostname>
+        <port>9234</port>
+      </server>
+{%- endfor %}
+    </raft_configuration>
+  </keeper_server>
+
+  <openSSL>
+    <server>
+      <certificateFile>/etc/clickhouse/certs/chnode.crt</certificateFile>
+      <privateKeyFile>/etc/clickhouse/certs/chnode.key</privateKeyFile>
+      <verificationMode>relaxed</verificationMode>
+      <loadDefaultCAFile>false</loadDefaultCAFile>
+      <caConfig>/etc/clickhouse/certs/Uptrace_CA.crt</caConfig>
+      <cacheSessions>true</cacheSessions>
+      <disableProtocols>sslv2,sslv3</disableProtocols>
+      <preferServerCiphers>true</preferServerCiphers>
+    </server>
+  </openSSL>
+</clickhouse>

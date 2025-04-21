@@ -1,0 +1,95 @@
+#jinja2: trim_blocks:False
+
+receivers:
+  hostmetrics:
+    collection_interval: 15s
+    scrapers:
+      cpu:
+      disk:
+      load:
+      filesystem:
+        include_fs_types:
+          match_type: strict
+          fs_types: [ext4]
+      memory:
+      network:
+      paging:
+
+  httpcheck:
+    targets:
+      - endpoint: 'https://api.uptrace.dev/health/status'
+        method: GET
+        tls: { insecure_skip_verify: true }
+    collection_interval: 15s
+
+{% if 'postgresql' in group_names %}
+  postgresql:
+    endpoint: "{{ inventory_hostname }}:5432"
+    transport: tcp
+    username: "{{ pg_db_user }}"
+    password: "{{ pg_db_password }}"
+    databases:
+      - "{{ pg_db_name }}"
+{% endif %}
+
+{% if 'redis' in group_names %}
+  redis:
+    endpoint: "{{ inventory_hostname }}:6379"
+    collection_interval: 15s
+{% endif %}
+
+{% if 'kafka' in group_names %}
+  kafkametrics:
+    protocol_version: 2.0.0
+    brokers: ["{{ inventory_hostname}}:9092"]
+    scrapers:
+      - brokers
+      - topics
+      - consumers
+{% endif %}
+
+{% if 'haproxy' in group_names %}
+  haproxy:
+    endpoint: http://127.0.0.1:8000/stats
+    collection_interval: 15s
+{% endif %}
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 200
+    spike_limit_mib: 50
+  resourcedetection:
+    detectors: [env, system]
+  batch:
+    send_batch_size: 1000
+    timeout: 10s
+
+exporters:
+  otlp:
+    endpoint: https://otlp.uptrace.dev:4317
+    headers:
+      {
+        "uptrace-dsn": "{{ uptrace_dsn }}",
+      }
+
+service:
+  pipelines:
+    metrics:
+      receivers:
+        - hostmetrics
+        - httpcheck
+{% if 'postgresql' in group_names %}
+        - postgresql
+{% endif %}
+{% if 'redis' in group_names %}
+        - redis
+{% endif %}
+{% if 'kafka' in group_names %}
+        - kafkametrics
+{% endif %}
+{% if 'haproxy-false' in group_names %}
+        - haproxy
+{% endif %}
+      processors: [resourcedetection, batch]
+      exporters: [otlp]

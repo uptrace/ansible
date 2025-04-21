@@ -1,0 +1,21 @@
+- name: upload server config
+  template:
+    src: '{{ item }}'
+    dest: /etc/clickhouse-server/config.d/
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - config.xml
+    - tls.xml
+    - storage.xml
+    - cluster.xml
+    - zookeeper.xml
+
+- name: upload users config
+  template:
+    src: users.xml
+    dest: /etc/clickhouse-server/users.d/users.xml
+    owner: root
+    group: root
+    mode: 0644

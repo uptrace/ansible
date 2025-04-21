@@ -1,0 +1,27 @@
+env: hosted
+secret_key: FIXME
+
+site_url: https://hosted.uptrace.dev
+certmagic_enabled: true
+#certmagic_staging_ca: true
+
+listen_http_port: 80
+listen_https_port: 443
+listen_grpc_port: 4317
+
+ch_db_name: uptrace
+ch_db_user: uptrace
+ch_db_password: FIXME
+
+ch_cluster: uptrace1
+ch_shards:
+  - name: shard1
+    weight: 1
+
+pg_db_name: uptrace
+pg_db_user: uptrace
+pg_db_password: FIXME
+
+#uptrace_dsn: https://FIXME@api.uptrace.dev?grpc=4317
+uptrace_license: ''
+telegram_bot_token: ''

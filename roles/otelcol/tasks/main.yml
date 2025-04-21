@@ -1,0 +1,25 @@
+- name: record DEB architecture
+  shell: dpkg --print-architecture
+  register: arch
+
+- name: download otel-collector
+  get_url:
+    url:
+      https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v{{
+      otelcol_version }}/otelcol-contrib_{{ otelcol_version }}_linux_{{ arch.stdout
+      }}.deb
+    dest: /tmp
+    validate_certs: no
+
+- name: install collector
+  command:
+    dpkg --force-confold -i /tmp/otelcol-contrib_{{ otelcol_version }}_linux_{{ arch.stdout
+    }}.deb
+
+- name: replace collector config
+  template:
+    src: otel-collector-config.yaml
+    dest: /etc/otelcol-contrib/config.yaml
+
+- name: restart otelcol-contrib
+  systemd: name=otelcol-contrib state=restarted enabled=yes daemon_reload=yes

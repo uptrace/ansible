@@ -1,0 +1,23 @@
+- hostname:
+    name: "{{ hostname }}"
+  when: hostname is defined
+
+- name: install nscd to cache DNS requests
+  apt:
+    name: nscd
+    update_cache: yes
+
+- name: set filesystem limits
+  import_tasks: fs_limits.yml
+
+- import_tasks: common_software.yml
+  tags: [common_software]
+
+- name: limit journalctl disk space usage
+  lineinfile:
+    path: /etc/systemd/journald.conf
+    line: SystemMaxUse=512M
+  tags: [journal]
+
+- import_tasks: earlyoom.yml
+  tags: [earlyoom]

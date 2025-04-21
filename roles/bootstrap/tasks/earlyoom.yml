@@ -1,0 +1,13 @@
+- name: install earlyoom
+  apt: name=earlyoom
+
+- name: upload config
+  template:
+    src: earlyoom.env
+    dest: /etc/default/earlyoom
+    mode: 0644
+  tags: [config]
+
+- name: restart earlyoom
+  systemd: name=earlyoom.service state=restarted enabled=yes daemon_reload=yes
+  tags: [systemd]

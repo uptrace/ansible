@@ -1,0 +1,222 @@
+#jinja2: trim_blocks:False
+
+##
+## General Uptrace settings.
+##
+service:
+  env: {{ env }}
+  secret: {{ secret_key }}
+
+site:
+  url: {{ site_url }}
+
+##
+## License information.
+##
+license:
+  data: '{{ uptrace_license }}'
+  # path: /path/to/uptrace/license
+
+auth:
+  disabled: false
+
+  # The following users will be created on the first startup.
+  users:
+    - name: Admin
+      email: admin@localhost.xxx
+      password: admin
+
+##
+## ClickHouse database credentials.
+##
+ch_cluster:
+  cluster: {{ ch_cluster }}
+  distributed: false
+  replicated: true
+  weight: 1
+
+  shards:
+  {% for shard in ch_shards %}
+    - replicas:
+    {% for host in groups['clickhouse_server'] %}
+      {% if hostvars[host].ch_cluster == ch_cluster and hostvars[host].ch_shard == shard.name %}
+      - addr: "{{ host }}:9440"
+        user: "{{ ch_db_user }}"
+        database: "{{ ch_db_name }}"
+        tls:
+          ca_file: /etc/clickhouse/certs/Uptrace_CA.crt
+          cert_file: /etc/clickhouse/certs/chnode.crt
+          key_file: /etc/clickhouse/certs/chnode.key
+          insecure_skip_verify: true
+
+        dial_timeout: 5s
+        write_timeout: 5s
+
+        max_execution_time: 30s
+        query_settings:
+          timeout_before_checking_execution_speed: 5
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+
+##
+## Various options to tweak ClickHouse schema.
+## For changes to take effect, you need reset the ClickHouse database with `ch reset`.
+##
+ch_schema:
+  tiered_storage: true
+  # Compression codec, for example, LZ4, ZSTD(3), or Default.
+  compression: Default
+
+  spans_index:
+    storage_policy: 'tiered'
+  spans_data:
+    storage_policy: 'tiered'
+
+  logs_index:
+    storage_policy: 'tiered'
+  logs_data:
+    storage_policy: 'tiered'
+
+  events_index:
+    storage_policy: 'tiered'
+  events_data:
+    storage_policy: 'tiered'
+
+  metrics:
+    storage_policy: 'tiered'
+
+##
+## PostgreSQL database credentials. The main database stores 99% of data
+## such as users, projects, dashboards, etc.
+##
+pg:
+  addr: "{{ groups.postgresql.0 }}:5432"
+  user: "{{ pg_db_user }}"
+  password: "{{ pg_db_password }}"
+  database: "{{ pg_db_name }}"
+
+  # TLS configuration. Uncomment to enable.
+  # tls:
+  #   insecure_skip_verify: true # only for self-signed certificates
+
+  conn_pool_addr: "{{ groups.postgresql.0 }}:6543"
+
+##
+## Redis database credentials for go-redis RedisRing client.
+##
+redis_cache:
+  dial_timeout: "1s"
+  read_timeout: "1s"
+  write_timeout: "1s"
+
+  addrs:
+{%- for host in groups.redis_cache %}
+    {{ hostvars[host].redis_node_id }}: "{{ host }}:6379"
+{%- endfor %}
+
+##
+## Addresses on which Uptrace receives gRPC and HTTP requests.
+##
+listen:
+  # OTLP/gRPC API.
+  grpc:
+    addr: ':4317'
+
+  # OTLP/HTTP API and Uptrace API with Vue UI.
+  http:
+    addr: ':443'
+
+certmagic:
+  enabled: {{ certmagic_enabled }}
+  staging_ca: {{ certmagic_staging_ca }}
+  http_challenge_addr: ':80'
+
+alerting:
+  disabled: false
+
+##
+## Spans processing options.
+##
+spans:
+  max_insert_size: 10000
+  max_buffered_records: 100e3
+
+##
+## Logs-specific processing options.
+## Most options are shared with the spans limits.
+##
+logs:
+  max_insert_size: 10000
+  max_buffered_records: 100e3
+
+##
+## Events-specific processing options.
+## Most options are shared with the spans limits.
+##
+events:
+  max_insert_size: 10000
+  max_buffered_records: 100e3
+
+##
+## Metrics processing options.
+##
+metrics:
+  max_ingest_per_min: 5e6
+  max_insert_size: 10000
+  max_buffered_records: 100e3
+  cum_point_storage_size: 1000000
+
+trace:
+  query_limit: 200e3
+
+###
+### Service graph processing options.
+###
+service_graph:
+  # Uncomment to disable.
+  # disabled: true
+
+##
+## Sourcemaps processing options for JavaScript errors.
+## Sourcemaps require Internet access to download source maps.
+##
+sourcemaps:
+  # Uncomment to disable.
+  # disabled: true
+
+##
+## uptrace-go client configuration.
+## Uptrace sends internal telemetry here.
+##
+uptrace_go:
+  # Uncomment to disable.
+  # disabled: true
+  dsn: "{{ uptrace_dsn }}"
+
+##
+## Token for the Telegram bot that will be sending notifications to Telegram channels.
+## Required if you are planning to use Telegram for notifications.
+##
+telegram:
+  bot_token: "{{ telegram_bot_token }}"
+
+##
+## Simple Email Service options.
+##
+mailer:
+  smtp:
+    # Whether to use this mailer for sending emails.
+    enabled: true
+    # SMTP server host.
+    host: localhost
+    # SMTP server port.
+    port: 1025
+    # Username for authentication.
+    username: mailhog
+    # Password for authentication.
+    password: mailhog
+    # Uncomment to disable opportunistic TLS.
+    #tls: { disabled: true }
+    # Emails will be send from this address.
+    from: 'uptrace@localhost'
