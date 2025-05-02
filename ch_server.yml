@@ -3,6 +3,4 @@
 
   roles:
     - { role: clickhouse-install }
-    - { role: clickhouse-certs }
-    - { role: clickhouse-client }
     - { role: clickhouse-server }

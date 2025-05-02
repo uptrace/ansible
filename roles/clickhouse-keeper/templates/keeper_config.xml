@@ -16,7 +16,6 @@
 
   <keeper_server>
     <tcp_port>9181</tcp_port>
-    <tcp_port_secure>9281</tcp_port_secure>
     <server_id>{{ keeper_id }}</server_id>
 
     <log_storage_path>/var/lib/clickhouse-keeper/log</log_storage_path>
@@ -41,17 +40,4 @@
 {%- endfor %}
     </raft_configuration>
   </keeper_server>
-
-  <openSSL>
-    <server>
-      <certificateFile>/etc/clickhouse/certs/chnode.crt</certificateFile>
-      <privateKeyFile>/etc/clickhouse/certs/chnode.key</privateKeyFile>
-      <verificationMode>relaxed</verificationMode>
-      <loadDefaultCAFile>false</loadDefaultCAFile>
-      <caConfig>/etc/clickhouse/certs/Uptrace_CA.crt</caConfig>
-      <cacheSessions>true</cacheSessions>
-      <disableProtocols>sslv2,sslv3</disableProtocols>
-      <preferServerCiphers>true</preferServerCiphers>
-    </server>
-  </openSSL>
 </clickhouse>

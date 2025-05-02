@@ -1,7 +1,7 @@
 env: hosted
 secret_key: FIXME
 
-site_url: https://hosted.uptrace.dev
+site_url: https://my.domain.com/
 certmagic_enabled: true
 #certmagic_staging_ca: true
 
@@ -22,6 +22,7 @@ pg_db_name: uptrace
 pg_db_user: uptrace
 pg_db_password: FIXME
 
+telegram_bot_token: ''
+
 #uptrace_dsn: https://FIXME@api.uptrace.dev?grpc=4317
 uptrace_license: ''
-telegram_bot_token: ''

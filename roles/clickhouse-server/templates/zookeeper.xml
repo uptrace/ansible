@@ -5,8 +5,7 @@
 {%- for host in groups['clickhouse_keeper'] %}
     <node>
       <host>{{ hostvars[host].ansible_default_ipv4.address }}</host>
-      <port>9281</port>
-      <secure>1</secure>
+      <port>9181</port>
     </node>
 {% endfor %}
     <session_timeout_ms>100000</session_timeout_ms>

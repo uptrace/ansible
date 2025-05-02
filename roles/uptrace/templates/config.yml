@@ -32,22 +32,17 @@ auth:
 ch_cluster:
   cluster: {{ ch_cluster }}
   distributed: false
-  replicated: true
-  weight: 1
+  replicated: false
 
   shards:
   {% for shard in ch_shards %}
     - replicas:
     {% for host in groups['clickhouse_server'] %}
       {% if hostvars[host].ch_cluster == ch_cluster and hostvars[host].ch_shard == shard.name %}
-      - addr: "{{ host }}:9440"
+      - addr: "{{ host }}:9000"
         user: "{{ ch_db_user }}"
+        password: "{{ ch_db_password }}"
         database: "{{ ch_db_name }}"
-        tls:
-          ca_file: /etc/clickhouse/certs/Uptrace_CA.crt
-          cert_file: /etc/clickhouse/certs/chnode.crt
-          key_file: /etc/clickhouse/certs/chnode.key
-          insecure_skip_verify: true
 
         dial_timeout: 5s
         write_timeout: 5s
@@ -127,8 +122,13 @@ listen:
   http:
     addr: ':443'
 
+##
+## TLS certificate issuance and renewal using Let's Encrypt.
+##
 certmagic:
+  # Use Let's Encrypt to obtain certificates.
   enabled: {{ certmagic_enabled }}
+  # Use Let's Encrypt staging environment.
   staging_ca: {{ certmagic_staging_ca }}
   http_challenge_addr: ':80'
 
@@ -162,7 +162,6 @@ events:
 ## Metrics processing options.
 ##
 metrics:
-  max_ingest_per_min: 5e6
   max_insert_size: 10000
   max_buffered_records: 100e3
   cum_point_storage_size: 1000000
@@ -199,7 +198,7 @@ uptrace_go:
 ## Required if you are planning to use Telegram for notifications.
 ##
 telegram:
-  bot_token: "{{ telegram_bot_token }}"
+  bot_token: ""
 
 ##
 ## Simple Email Service options.

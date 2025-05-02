@@ -3,5 +3,4 @@
 
   roles:
     - { role: clickhouse-install }
-    - { role: clickhouse-certs }
     - { role: clickhouse-keeper, tags: [keeper] }

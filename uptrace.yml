@@ -2,5 +2,4 @@
   become: yes
 
   roles:
-    - clickhouse-certs
     - uptrace

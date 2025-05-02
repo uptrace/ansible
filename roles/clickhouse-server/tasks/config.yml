@@ -7,7 +7,6 @@
     mode: 0644
   loop:
     - config.xml
-    - tls.xml
     - storage.xml
     - cluster.xml
     - zookeeper.xml

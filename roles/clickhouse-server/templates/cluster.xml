@@ -24,7 +24,6 @@
           <port>9440</port>
           <user>{{ ch_db_user }}</user>
           <password>{{ ch_db_password }}</password>
-          <secure>1</secure>
         </replica>
       {% endif %}
     {% endfor %}
@@ -46,7 +45,6 @@
           <port>9440</port>
           <user>{{ ch_db_user }}</user>
           <password>{{ ch_db_password }}</password>
-          <secure>1</secure>
         </replica>
       {% endif %}
     {% endfor %}

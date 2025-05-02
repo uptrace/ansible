@@ -31,17 +31,11 @@
       <allow_suspicious_types_in_order_by>1</allow_suspicious_types_in_order_by>
       <type_json_skip_duplicated_paths>1</type_json_skip_duplicated_paths>
     </default>
-
-    <{{ ch_db_user }}></{{ ch_db_user }}>
   </profiles>
 
   <users>
     <{{ ch_db_user }}>
-      <profile>{{ ch_db_user }}</profile>
-
-      <ssl_certificates>
-        <common_name>chnode</common_name>
-      </ssl_certificates>
+      <password>{{ ch_db_password }}</password>
 
       <networks>
         <ip>::/0</ip>
