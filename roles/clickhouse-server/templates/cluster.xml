@@ -12,7 +12,7 @@
 
   <remote_servers>
     <uptrace_all>
-      <secret>{{ secret_key }}</secret>
+      <secret>{{ secret }}</secret>
 
   {% for shard in ch_shards %}
       <shard>
@@ -32,7 +32,7 @@
     </uptrace_all>
 
     <{{ ch_cluster }}>
-      <secret>{{ secret_key }}</secret>
+      <secret>{{ secret }}</secret>
 
   {% for shard in ch_shards %}
       <shard>

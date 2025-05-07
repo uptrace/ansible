@@ -2,9 +2,8 @@ uptrace_version: '2.0.0-beta.1'
 uptrace_license: ''
 uptrace_dsn: ''
 
-listen_http_port: 80
-listen_https_port: 443
-listen_grpc_port: 4317
+listen_http_addr: ':80'
+listen_grpc_addr: ':4317'
 
 certmagic_enabled: false
 certmagic_staging_ca: false

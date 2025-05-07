@@ -5,17 +5,10 @@
 ##
 service:
   env: {{ env }}
-  secret: {{ secret_key }}
+  secret: {{ secret }}
 
 site:
   url: {{ site_url }}
-
-##
-## License information.
-##
-license:
-  data: '{{ uptrace_license }}'
-  # path: /path/to/uptrace/license
 
 auth:
   disabled: false
@@ -194,13 +187,6 @@ uptrace_go:
   dsn: "{{ uptrace_dsn }}"
 
 ##
-## Token for the Telegram bot that will be sending notifications to Telegram channels.
-## Required if you are planning to use Telegram for notifications.
-##
-telegram:
-  bot_token: ""
-
-##
 ## Simple Email Service options.
 ##
 mailer:
@@ -219,3 +205,24 @@ mailer:
     #tls: { disabled: true }
     # Emails will be send from this address.
     from: 'uptrace@localhost'
+
+##
+## Token for the Telegram bot that will be sending notifications to Telegram channels.
+## Required if you are planning to use Telegram for notifications.
+##
+telegram:
+  bot_token: ""
+
+##
+## Logging configuration options.
+##
+logging:
+  # Valid values: DEBUG, INFO, WARN, ERROR.
+  level: INFO
+
+##
+## License information.
+##
+license:
+  data: '{{ uptrace_license }}'
+  #path: /path/to/uptrace/license

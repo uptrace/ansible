@@ -1,13 +1,14 @@
 env: hosted
-secret_key: FIXME
+secret: FIXME
 
-site_url: https://my.domain.com/
-certmagic_enabled: true
-#certmagic_staging_ca: true
+site_url: http://uptrace.local
+# Whether to enable Let's Encrypt.
+certmagic_enabled: false
+# Whether to use Let's Encrypt staging environment.
+certmagic_staging_ca: true
 
-listen_http_port: 80
-listen_https_port: 443
-listen_grpc_port: 4317
+listen_http_addr: ':80'
+listen_grpc_addr: ':4317'
 
 ch_db_name: uptrace
 ch_db_user: uptrace
