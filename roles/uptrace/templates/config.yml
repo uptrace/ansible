@@ -8,7 +8,26 @@ service:
   secret: {{ secret }}
 
 site:
+  # HTTP endpoint for the UI and DSN.
+  # Unless you use a reverse proxy, the port here should match the port in the listen.http.addr.
   url: {{ site_url }}
+
+##
+## Addresses on which Uptrace receives gRPC and HTTP requests.
+##
+listen:
+  # OTLP/HTTP API and Uptrace API with Vue UI.
+  http:
+    addr: ':443'
+
+  # OTLP/gRPC API.
+  grpc:
+    addr: ':4317'
+
+  # TLS configuration for both HTTP and gRPC. Uncomment to enable.
+  #tls:
+  #  cert_file: config/tls/uptrace.crt
+  #  key_file: config/tls/uptrace.key
 
 auth:
   disabled: false
@@ -102,18 +121,6 @@ redis_cache:
 {%- for host in groups.redis_cache %}
     {{ hostvars[host].redis_node_id }}: "{{ host }}:6379"
 {%- endfor %}
-
-##
-## Addresses on which Uptrace receives gRPC and HTTP requests.
-##
-listen:
-  # OTLP/gRPC API.
-  grpc:
-    addr: ':4317'
-
-  # OTLP/HTTP API and Uptrace API with Vue UI.
-  http:
-    addr: ':443'
 
 ##
 ## TLS certificate issuance and renewal using Let's Encrypt.
