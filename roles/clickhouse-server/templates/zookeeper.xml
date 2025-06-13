@@ -7,9 +7,9 @@
       <host>{{ hostvars[host].ansible_default_ipv4.address }}</host>
       <port>9181</port>
     </node>
-{% endfor %}
+{%- endfor %}
     <session_timeout_ms>100000</session_timeout_ms>
-    <operation_timeout_ms>30000</operation_timeout_ms>
+    <operation_timeout_ms>60000</operation_timeout_ms>
   </zookeeper>
 
   <distributed_ddl>

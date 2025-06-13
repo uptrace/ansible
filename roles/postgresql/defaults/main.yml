@@ -1,4 +1,2 @@
 pg_version: '17'
 pg_next_version: '18'
-
-db_backup_name: ''

@@ -15,6 +15,9 @@ ch_db_user: uptrace
 ch_db_password: FIXME
 
 ch_cluster: uptrace1
+ch_distributed: false
+ch_replicated: false
+
 ch_shards:
   - name: shard1
     weight: 1
@@ -25,6 +28,6 @@ pg_db_password: FIXME
 
 telegram_bot_token: ''
 
-uptrace_version: '2.0.0-beta.2'
+uptrace_version: '2.0.0-beta.5'
 uptrace_license: ''
 #uptrace_dsn: https://FIXME@api.uptrace.dev?grpc=4317

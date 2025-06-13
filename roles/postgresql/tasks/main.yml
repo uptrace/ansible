@@ -21,7 +21,7 @@
   apt: name=python3-psycopg2
 
 - import_tasks: setup_db.yml
-  when: db_slaveof is not defined
+  when: pg_primary_host is not defined
 
 - name: upload postgresql.conf
   template:
@@ -39,10 +39,14 @@
     mode: '0644'
     owner: postgres
     group: postgres
-  when: db_slaveof is defined
+  when: pg_primary_host is defined
 
 - import_tasks: pgbouncer.yml
   tags: [pgbouncer]
+
+- import_tasks: pgbackrest.yml
+  when: pgbackrest is defined
+  tags: [pgbackrest]
 
 - name: upload pg_hba.conf
   template:

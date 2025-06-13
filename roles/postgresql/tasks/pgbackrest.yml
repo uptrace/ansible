@@ -1,0 +1,39 @@
+- name: install pgbackrest
+  apt:
+    name:
+      - pgbackrest
+
+- name: create pgbackrest dirs
+  shell: '{{ item }}'
+  loop:
+    - mkdir -p -m 770 /var/log/pgbackrest
+    - chown postgres:postgres /var/log/pgbackrest
+    - mkdir -p /etc/pgbackrest/conf.d
+
+- name: upload pgbackrest.conf
+  template:
+    src: pgbackrest.conf
+    dest: /etc/pgbackrest/pgbackrest.conf
+    mode: 0640
+    owner: postgres
+    group: postgres
+
+- name: cron full backup
+  cron:
+    name: full backup
+    user: postgres
+    job: PGOPTIONS="--statement-timeout=0" pgbackrest --type=full --stanza=uptrace backup
+    weekday: '0'
+    hour: '06'
+    minute: '05'
+  when: pg_primary_host is not defined
+
+- name: cron incr back
+  cron:
+    name: diff backup
+    user: postgres
+    job: PGOPTIONS="--statement-timeout=0" pgbackrest --type=incr --stanza=uptrace backup
+    weekday: '1-6'
+    hour: '06'
+    minute: '05'
+  when: pg_primary_host is not defined

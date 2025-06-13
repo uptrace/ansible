@@ -36,7 +36,7 @@
 
   {% for shard in ch_shards %}
       <shard>
-        <weight>{{ shard.weight | default(1) }}</weight>
+        <weight>{{ shard.weight|default(1) }}</weight>
         <internal_replication>true</internal_replication>
     {% for host in groups.clickhouse %}
       {% if hostvars[host].ch_cluster == ch_cluster and hostvars[host].ch_shard == shard.name %}

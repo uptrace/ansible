@@ -43,8 +43,8 @@ auth:
 ##
 ch_cluster:
   cluster: {{ ch_cluster }}
-  distributed: false
-  replicated: false
+  distributed: {{ ch_distributed }}
+  replicated: {{ ch_replicated }}
 
   shards:
   {% for shard in ch_shards %}
@@ -76,26 +76,25 @@ ch_schema:
   compression: Default
 
   spans_index:
-    storage_policy: 'tiered'
+    storage_policy: 'default'
   spans_data:
-    storage_policy: 'tiered'
+    storage_policy: 'default'
 
   logs_index:
-    storage_policy: 'tiered'
+    storage_policy: 'default'
   logs_data:
-    storage_policy: 'tiered'
+    storage_policy: 'default'
 
   events_index:
-    storage_policy: 'tiered'
+    storage_policy: 'default'
   events_data:
-    storage_policy: 'tiered'
+    storage_policy: 'default'
 
   metrics:
-    storage_policy: 'tiered'
+    storage_policy: 'default'
 
 ##
-## PostgreSQL database credentials. The main database stores 99% of data
-## such as users, projects, dashboards, etc.
+## PostgreSQL database credentials.
 ##
 pg:
   addr: "{{ groups.postgresql.0 }}:5432"
@@ -104,10 +103,17 @@ pg:
   database: "{{ pg_db_name }}"
 
   # TLS configuration. Uncomment to enable.
-  # tls:
-  #   insecure_skip_verify: true # only for self-signed certificates
+  #tls:
+  #  insecure_skip_verify: true # only for self-signed certificates
 
   conn_pool_addr: "{{ groups.postgresql.0 }}:6543"
+
+  replicas:
+{%- for host in groups.postgresql %}
+  {%- if hostvars[host].pg_replica_of is defined %}
+    - {{ host }}:6543
+  {%- endif %}
+{%- endfor %}
 
 ##
 ## Redis database credentials for go-redis RedisRing client.
@@ -119,7 +125,7 @@ redis_cache:
 
   addrs:
 {%- for host in groups.redis_cache %}
-    {{ hostvars[host].redis_node_id }}: "{{ host }}:6379"
+    {{ hostvars[host].redis_node_id }}: "{{ host }}:{{ hostvars[host].redis_port|default(6379) }}"
 {%- endfor %}
 
 ##
@@ -132,42 +138,86 @@ certmagic:
   staging_ca: {{ certmagic_staging_ca }}
   http_challenge_addr: ':80'
 
-alerting:
-  disabled: false
-
 ##
 ## Spans processing options.
 ##
 spans:
-  max_insert_size: 10000
-  max_buffered_records: 100e3
+  # Max number of goroutines processing spans.
+  # Default is GOMAXPROCS.
+  #max_threads: 10
+
+  # Max number of spans to insert in a single query.
+  #max_insert_size: 10000
+
+  # Max number of buffered spans. If the buffer is full, spans are dropped.
+  # Default scales linearly with max_threads.
+  #max_buffered_records: 100e3
 
 ##
-## Logs-specific processing options.
-## Most options are shared with the spans limits.
+## Logs processing options.
 ##
 logs:
-  max_insert_size: 10000
-  max_buffered_records: 100e3
+  # Max number of goroutines processing logs.
+  # Default is GOMAXPROCS.
+  #max_threads: 10
+
+  # Max number of logs to insert in a single query.
+  #max_insert_size: 10000
+
+  # Max number of buffered logs. If the buffer is full, logs are dropped.
+  # Default scales linearly with max_threads.
+  #max_buffered_records: 100e3
 
 ##
-## Events-specific processing options.
-## Most options are shared with the spans limits.
+## Events processing options.
 ##
 events:
-  max_insert_size: 10000
-  max_buffered_records: 100e3
+  # Max number of goroutines processing events.
+  # Default is GOMAXPROCS.
+  #max_threads: 10
+
+  # Max number of events to insert in a single query.
+  #max_insert_size: 10000
+
+  # Max number of buffered events. If the buffer is full, events are dropped.
+  # Default scales linearly with max_threads.
+  #max_buffered_records: 100e3
 
 ##
 ## Metrics processing options.
 ##
 metrics:
-  max_insert_size: 10000
-  max_buffered_records: 100e3
-  cum_point_storage_size: 1000000
+  # Max number of goroutines processing datapoints.
+  # Default is GOMAXPROCS.
+  #max_threads: 10
 
+  # Max number of datapoints to insert in a single query.
+  #max_insert_size: 10000
+
+  # Max number of buffered datapoints. If the buffer is full, datapoints are dropped.
+  # Default scales linearly with max_threads.
+  #max_buffered_records: 100e3
+
+  # Max number of cumulative timeseries to convert into delta timeseries.
+  # Default scales linearly with max_threads.
+  #max_cumulative_timeseries: 1e6
+
+##
+## Trace constructing limits.
+##
 trace:
-  query_limit: 200e3
+  # Max number of spans, logs, and events to select.
+  #query_limit: 200_000
+
+  # Max number of bytes to select.
+  #max_memory_usage_bytes: 200_000_000
+
+###
+### Alerting options.
+###
+alerting:
+  # Uncomment to disable monitors and notifications.
+  #disabled: true
 
 ###
 ### Service graph processing options.
@@ -190,7 +240,7 @@ sourcemaps:
 ##
 uptrace_go:
   # Uncomment to disable.
-  # disabled: true
+  #disabled: true
   dsn: "{{ uptrace_dsn }}"
 
 ##
@@ -228,8 +278,8 @@ logging:
   level: INFO
 
 ##
-## License information.
+## License options. A license is required to enable premium features.
+## See https://uptrace.dev/get/hosted#premium-edition for details.
 ##
 license:
-  data: '{{ uptrace_license }}'
-  #path: /path/to/uptrace/license
+  key: '{{ uptrace_license }}'

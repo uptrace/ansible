@@ -1,3 +1,19 @@
+- name: config files
+  set_fact:
+    config_files:
+      - config.xml
+      - storage.xml
+
+- name: add cluster.xml
+  set_fact:
+    config_files: "{{ config_files + ['cluster.xml'] }}"
+  when: ch_distributed
+
+- name: add zookeeper.xml
+  set_fact:
+    config_files: "{{ config_files + ['zookeeper.xml'] }}"
+  when: ch_replicated
+
 - name: upload server config
   template:
     src: '{{ item }}'
@@ -5,11 +21,7 @@
     owner: root
     group: root
     mode: 0644
-  loop:
-    - config.xml
-    - storage.xml
-    - cluster.xml
-    - zookeeper.xml
+  loop: '{{ config_files }}'
 
 - name: upload users config
   template:
