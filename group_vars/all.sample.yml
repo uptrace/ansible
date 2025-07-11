@@ -15,12 +15,8 @@ ch_db_user: uptrace
 ch_db_password: FIXME
 
 ch_cluster: uptrace1
-ch_distributed: false
 ch_replicated: false
-
-ch_shards:
-  - name: shard1
-    weight: 1
+ch_distributed: false
 
 pg_db_name: uptrace
 pg_db_user: uptrace
@@ -28,6 +24,35 @@ pg_db_password: FIXME
 
 telegram_bot_token: ''
 
-uptrace_version: '2.0.0-beta.5'
+uptrace_version: '2.0.0-rc.1'
 uptrace_license: ''
 #uptrace_dsn: https://FIXME@api.uptrace.dev?grpc=4317
+
+# Initial data created on first startup
+seed_data:
+  users:
+    - name: Admin
+      key: user1                 # Unique identifier for referencing in relationships
+      email: admin@uptrace.local
+      password: admin            # TODO: Change default password!
+      auth_tokens: [user1_secret]
+
+  orgs:
+    - name: Org1
+      key: org1                  # Unique identifier for referencing below
+
+  org_users:
+    - org: org1                  # References org.key above
+      user: user1                # References user.key above
+      role: owner
+
+  projects:
+    - name: Project1
+      key: project1              # Unique identifier for referencing below
+      org: org1                  # References org.key above
+      tokens: [project1_secret]
+
+  project_users:
+    - project: project1          # References project.key above
+      user: user1                # References user.key above
+      perm_level: admin

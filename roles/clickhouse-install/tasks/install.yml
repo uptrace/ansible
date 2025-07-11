@@ -1,14 +1,15 @@
-- name: add apt key
+---
+- name: Add ClickHouse apt key
   apt_key:
     keyserver: hkp://keyserver.ubuntu.com:80
     id: 8919F6BD2B48D754
 
-- name: add apt repo
+- name: Add ClickHouse apt repo
   apt_repository:
     repo: deb https://packages.clickhouse.com/deb stable main
     state: present
 
-- name: install clickhouse
+- name: Install clickhouse
   apt:
     name:
       - clickhouse-common-static={{ ch_version }}
@@ -17,7 +18,7 @@
     allow_downgrade: yes
     update_cache: yes
 
-- name: pin clickhouse
+- name: Pin clickhouse
   template:
     src: clickhouse.pin
     dest: /etc/apt/preferences.d/clickhouse

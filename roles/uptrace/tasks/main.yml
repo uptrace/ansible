@@ -1,17 +1,18 @@
-- name: create uptrace user
+---
+- name: Create uptrace user
   user: name=uptrace groups=sudo shell=/bin/bash
 
-- name: create Uptrace data directory
+- name: Create Uptrace data directory
   file: path=/var/lib/uptrace/ state=directory owner=uptrace group=uptrace mode=0755
 
-- name: create Uptrace config directory
+- name: Create Uptrace config directory
   file: path=/etc/uptrace/ state=directory owner=uptrace group=uptrace mode=0755
 
-- name: record DEB architecture
+- name: Record DEB architecture
   shell: dpkg --print-architecture
   register: arch
 
-- name: download Uptrace
+- name: Download Uptrace
   get_url:
     url: https://github.com/uptrace/uptrace/releases/download/v{{uptrace_version}}/uptrace_linux_{{arch.stdout}}
     dest: /usr/local/bin/uptrace
@@ -19,17 +20,24 @@
     group: uptrace
     mode: 0755
     force: true
+  notify: Restart Uptrace
 
-- name: check Uptrace binary
+- name: Check Uptrace binary
   command: /usr/local/bin/uptrace version
 
-- name: upload Uptrace config
+- set_fact:
+    ch_shards:
+      "{{ groups.clickhouse_server | map('extract', hostvars, 'ch_shard') | unique | sort }}"
+  tags: [config]
+
+- name: Upload Uptrace config
   template:
     src: config.yml
     dest: /etc/uptrace/config.yml
     owner: uptrace
     group: uptrace
     mode: 0644
+  notify: Restart Uptrace
   tags: [config]
 
 - import_tasks: systemd.yml
@@ -38,7 +46,8 @@
 - import_tasks: logging.yml
   tags: [logging]
 
-- cron:
+- name: Configure cron to delete old data
+  cron:
     name: retention_check
     job:
       /usr/bin/flock /var/lock/uptrace_retention.lock /usr/local/bin/uptrace
@@ -46,4 +55,3 @@
     weekday: '6' # Saturday
     hour: '0'
     minute: '15'
-  when: uptrace_license is defined

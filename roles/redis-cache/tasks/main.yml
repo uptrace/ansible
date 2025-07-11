@@ -1,18 +1,10 @@
-- name: copy Redis config
+---
+- name: Upload Redis config
   template:
     src: redis7.conf
     dest: /etc/redis/redis.conf
     owner: redis
     group: redis
     mode: 0644
+  notify: Restart Redis
   tags: [config]
-
-- name: restart Redis
-  systemd:
-    name: redis-server
-    state: restarted
-    enabled: yes
-
-- name: configure maxmemory without a restart
-  command: redis-cli -n 0 config set maxmemory {{ redis_maxmemory_mb }}mb
-  ignore_errors: yes

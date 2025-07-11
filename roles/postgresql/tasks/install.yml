@@ -1,15 +1,13 @@
-- name: install apt_repository dependencies
-  apt: name=python3-pycurl
-
-- name: add PostgreSQL apt key
+---
+- name: Add PostgreSQL apt key
   apt_key: url=https://www.postgresql.org/media/keys/ACCC4CF8.asc
 
-- name: add PostgreSQL apt repository
+- name: Add PostgreSQL apt repository
   apt_repository:
     repo: deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main
     update_cache: yes
 
-- name: install PostgreSQL
+- name: Install PostgreSQL
   apt:
     name:
       - postgresql-{{ pg_version }}
@@ -18,17 +16,3 @@
       - postgresql-contrib-{{ pg_version }}
     update_cache: yes
     state: latest
-
-- name: stop PostgreSQL
-  systemd: name=postgresql state=stopped
-
-- name: drop default cluster
-  command: pg_dropcluster {{ pg_version }} main
-  become_user: postgres
-
-- name: create cluster
-  command: pg_createcluster {{ pg_version }} main -- --no-locale --encoding=UTF8
-  become_user: postgres
-
-- name: start PostgreSQL
-  systemd: name=postgresql state=started

@@ -1,110 +1,126 @@
 #jinja2: trim_blocks:False
+# {{ ansible_managed }}
 
-##
-## General Uptrace settings.
-##
+# =============================================================================
+# Uptrace Configuration File
+# =============================================================================
+# Complete configuration reference: https://uptrace.dev/get/hosted/config
+#
+# Environment Variable Support:
+#   - Simple substitution: foo: $FOO
+#   - With braces: bar: ${BAR}
+#   - With defaults: baz: ${BAZ:default_value}
+#   - To escape '$': foo: $$FOO_BAR
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Service Configuration
+# -----------------------------------------------------------------------------
+# Core service settings that define the runtime environment
 service:
-  env: {{ env }}
-  secret: {{ secret }}
+  env: hosted                      # Environment: hosted, development, production
+  secret: {{ secret }}             # Secret key for cryptographic operations (CHANGE THIS!)
 
+# -----------------------------------------------------------------------------
+# Site Configuration
+# -----------------------------------------------------------------------------
+# External-facing site settings
 site:
-  # HTTP endpoint for the UI and DSN.
-  # Unless you use a reverse proxy, the port here should match the port in the listen.http.addr.
+  # Public URL for the UI and DSN endpoint
+  # NOTE: Port should match listen.http.addr unless using a reverse proxy
   url: {{ site_url }}
 
-##
-## Addresses on which Uptrace receives gRPC and HTTP requests.
-##
+# -----------------------------------------------------------------------------
+# Network Listeners
+# -----------------------------------------------------------------------------
+# Configure addresses where Uptrace accepts incoming requests
 listen:
-  # OTLP/HTTP API and Uptrace API with Vue UI.
+  # HTTP server for OTLP/HTTP API and Vue.js UI
   http:
-    addr: ':443'
+    addr: :443
 
-  # OTLP/gRPC API.
+  # gRPC server for OTLP/gRPC API
   grpc:
-    addr: ':4317'
+    addr: :4317
 
-  # TLS configuration for both HTTP and gRPC. Uncomment to enable.
+  # TLS configuration (uncomment to enable HTTPS/secure gRPC)
   #tls:
   #  cert_file: config/tls/uptrace.crt
   #  key_file: config/tls/uptrace.key
 
+# -----------------------------------------------------------------------------
+# Authentication & Authorization
+# -----------------------------------------------------------------------------
 auth:
-  disabled: false
+  # Set to true to disable username/password authentication
+  # Note: SSO authentication will remain available
+  #disabled: true
 
-  # The following users will be created on the first startup.
-  users:
-    - name: Admin
-      email: admin@localhost.xxx
-      password: admin
+  # Email address validation pattern (optional)
+  # Only users with matching email addresses can register/login
+  # Example: '^.+@example\.com$' restricts to @example.com domain
+  #email_regexp: '^.+@example\.com$'
 
-##
-## ClickHouse database credentials.
-##
+# -----------------------------------------------------------------------------
+# Bootstrap Data
+# -----------------------------------------------------------------------------
+# Initial data created on first startup
+seed_data:
+  {{ seed_data|to_nice_yaml(indent=2)|indent(2) }}
+
+# -----------------------------------------------------------------------------
+# ClickHouse Database Configuration
+# -----------------------------------------------------------------------------
+# Primary storage for telemetry data (spans, logs, metrics)
 ch_cluster:
   cluster: {{ ch_cluster }}
+
+  # Enable ClickHouse replicated tables for high availability
+  # Requires cluster configuration
+  replicated: {{ ch_distributed }}
+
+  # Enable ClickHouse distributed tables for horizontal scaling
+  # Requires cluster configuration and Premium Edition
   distributed: {{ ch_distributed }}
-  replicated: {{ ch_replicated }}
 
   shards:
-  {% for shard in ch_shards %}
+    {% for ch_shard in ch_shards %}
     - replicas:
-    {% for host in groups['clickhouse_server'] %}
-      {% if hostvars[host].ch_cluster == ch_cluster and hostvars[host].ch_shard == shard.name %}
-      - addr: "{{ host }}:9000"
-        user: "{{ ch_db_user }}"
-        password: "{{ ch_db_password }}"
-        database: "{{ ch_db_name }}"
+        {% for host in groups['clickhouse_server'] %}
+        {% if hostvars[host].ch_shard == ch_shard %}
+        - addr: {{ host }}:9000
+          database: {{ ch_db_name }}
+          user: {{ ch_db_user }}
+          password: {{ ch_db_password }}
 
-        dial_timeout: 5s
-        write_timeout: 5s
+          # Connection timeouts
+          dial_timeout: 3s
+          write_timeout: 5s
+          max_retries: 3
 
-        max_execution_time: 30s
-        query_settings:
-          timeout_before_checking_execution_speed: 5
+          # Query execution limit
+          max_execution_time: 15s
+
+          # TLS configuration (uncomment for secure connections)
+          #tls:
+          #  insecure_skip_verify: true  # WARNING: Only use for self-signed certificates
       {% endif %}
     {% endfor %}
   {% endfor %}
 
-##
-## Various options to tweak ClickHouse schema.
-## For changes to take effect, you need reset the ClickHouse database with `ch reset`.
-##
-ch_schema:
-  tiered_storage: true
-  # Compression codec, for example, LZ4, ZSTD(3), or Default.
-  compression: Default
-
-  spans_index:
-    storage_policy: 'default'
-  spans_data:
-    storage_policy: 'default'
-
-  logs_index:
-    storage_policy: 'default'
-  logs_data:
-    storage_policy: 'default'
-
-  events_index:
-    storage_policy: 'default'
-  events_data:
-    storage_policy: 'default'
-
-  metrics:
-    storage_policy: 'default'
-
-##
-## PostgreSQL database credentials.
-##
+# -----------------------------------------------------------------------------
+# PostgreSQL Database Configuration
+# -----------------------------------------------------------------------------
+# Metadata storage (users, projects, dashboards, etc.)
 pg:
-  addr: "{{ groups.postgresql.0 }}:5432"
-  user: "{{ pg_db_user }}"
-  password: "{{ pg_db_password }}"
-  database: "{{ pg_db_name }}"
+  addr: {{ groups.postgresql.0 }}:5432
+  user: {{ pg_db_user }}
+  password: {{ pg_db_password }}
+  database: {{ pg_db_name }}
 
-  # TLS configuration. Uncomment to enable.
+  # TLS configuration (uncomment for secure connections)
   #tls:
-  #  insecure_skip_verify: true # only for self-signed certificates
+  #  insecure_skip_verify: true  # WARNING: Only use for self-signed certificates
 
   conn_pool_addr: "{{ groups.postgresql.0 }}:6543"
 
@@ -115,171 +131,174 @@ pg:
   {%- endif %}
 {%- endfor %}
 
-##
-## Redis database credentials for go-redis RedisRing client.
-##
+# -----------------------------------------------------------------------------
+# ClickHouse Schema Configuration
+# -----------------------------------------------------------------------------
+# Advanced schema settings - requires 'ch reset' to apply changes
+ch_schema:
+  # Compression algorithm: LZ4, ZSTD(1), or Default
+  compression: ZSTD(1)
+
+  # Storage policies for different data types
+  spans_index:
+    storage_policy: default
+  spans_data:
+    storage_policy: default
+  span_links:
+    storage_policy: default
+  logs_index:
+    storage_policy: default
+  logs_data:
+    storage_policy: default
+  events_index:
+    storage_policy: default
+  events_data:
+    storage_policy: default
+  metrics:
+    storage_policy: default
+
+# -----------------------------------------------------------------------------
+# Redis Cache Configuration
+# -----------------------------------------------------------------------------
+# In-memory cache for improved query performance and session storage
 redis_cache:
-  dial_timeout: "1s"
-  read_timeout: "1s"
-  write_timeout: "1s"
-
   addrs:
-{%- for host in groups.redis_cache %}
-    {{ hostvars[host].redis_node_id }}: "{{ host }}:{{ hostvars[host].redis_port|default(6379) }}"
-{%- endfor %}
+    {%- for host in groups.redis_cache %}
+    hostvars[host].redis_node_id: {{ host }}:{{ hostvars[host].redis_port|default(6379) }}
+    {%- endfor %}
 
-##
-## TLS certificate issuance and renewal using Let's Encrypt.
-##
+  # TLS configuration (uncomment for secure connections)
+  #tls:
+  #  insecure_skip_verify: true  # WARNING: Only use for self-signed certificates
+
+# -----------------------------------------------------------------------------
+# SSL/TLS Certificate Management
+# -----------------------------------------------------------------------------
+# Automatic certificate issuance and renewal via Let's Encrypt
 certmagic:
-  # Use Let's Encrypt to obtain certificates.
-  enabled: {{ certmagic_enabled }}
-  # Use Let's Encrypt staging environment.
-  staging_ca: {{ certmagic_staging_ca }}
-  http_challenge_addr: ':80'
+  enabled: {{ certmagic_enabled }}                # Enable Let's Encrypt certificate management
+  staging_ca: {{ certmagic_staging_ca }}          # Use staging environment for testing
+  http_challenge_addr: :80                        # Address for HTTP-01 challenge validation
 
-##
-## Spans processing options.
-##
-spans:
-  # Max number of goroutines processing spans.
-  # Default is GOMAXPROCS.
-  #max_threads: 10
-
-  # Max number of spans to insert in a single query.
-  #max_insert_size: 10000
-
-  # Max number of buffered spans. If the buffer is full, spans are dropped.
-  # Default scales linearly with max_threads.
-  #max_buffered_records: 100e3
-
-##
-## Logs processing options.
-##
-logs:
-  # Max number of goroutines processing logs.
-  # Default is GOMAXPROCS.
-  #max_threads: 10
-
-  # Max number of logs to insert in a single query.
-  #max_insert_size: 10000
-
-  # Max number of buffered logs. If the buffer is full, logs are dropped.
-  # Default scales linearly with max_threads.
-  #max_buffered_records: 100e3
-
-##
-## Events processing options.
-##
-events:
-  # Max number of goroutines processing events.
-  # Default is GOMAXPROCS.
-  #max_threads: 10
-
-  # Max number of events to insert in a single query.
-  #max_insert_size: 10000
-
-  # Max number of buffered events. If the buffer is full, events are dropped.
-  # Default scales linearly with max_threads.
-  #max_buffered_records: 100e3
-
-##
-## Metrics processing options.
-##
-metrics:
-  # Max number of goroutines processing datapoints.
-  # Default is GOMAXPROCS.
-  #max_threads: 10
-
-  # Max number of datapoints to insert in a single query.
-  #max_insert_size: 10000
-
-  # Max number of buffered datapoints. If the buffer is full, datapoints are dropped.
-  # Default scales linearly with max_threads.
-  #max_buffered_records: 100e3
-
-  # Max number of cumulative timeseries to convert into delta timeseries.
-  # Default scales linearly with max_threads.
-  #max_cumulative_timeseries: 1e6
-
-##
-## Trace constructing limits.
-##
-trace:
-  # Max number of spans, logs, and events to select.
-  #query_limit: 200_000
-
-  # Max number of bytes to select.
-  #max_memory_usage_bytes: 200_000_000
-
-###
-### Alerting options.
-###
-alerting:
-  # Uncomment to disable monitors and notifications.
-  #disabled: true
-
-###
-### Service graph processing options.
-###
-service_graph:
-  # Uncomment to disable.
-  # disabled: true
-
-##
-## Sourcemaps processing options for JavaScript errors.
-## Sourcemaps require Internet access to download source maps.
-##
-sourcemaps:
-  # Uncomment to disable.
-  # disabled: true
-
-##
-## uptrace-go client configuration.
-## Uptrace sends internal telemetry here.
-##
-uptrace_go:
-  # Uncomment to disable.
-  #disabled: true
-  dsn: "{{ uptrace_dsn }}"
-
-##
-## Simple Email Service options.
-##
+# -----------------------------------------------------------------------------
+# Email Configuration
+# -----------------------------------------------------------------------------
+# Required for alert notifications and user management
+# Documentation: https://uptrace.dev/features/alerting
 mailer:
   smtp:
-    # Whether to use this mailer for sending emails.
-    enabled: true
-    # SMTP server host.
-    host: localhost
-    # SMTP server port.
-    port: 1025
-    # Username for authentication.
-    username: mailhog
-    # Password for authentication.
-    password: mailhog
-    # Uncomment to disable opportunistic TLS.
+    enabled: false              # Enable email notifications
+    host: localhost             # SMTP server hostname
+    port: 1025                  # SMTP server port
+    username: mailhog           # SMTP authentication username
+    password: mailhog           # SMTP authentication password
+    from: uptrace@localhost   # Sender email address
+
+    # TLS configuration (uncomment to disable opportunistic TLS)
     #tls: { disabled: true }
-    # Emails will be send from this address.
-    from: 'uptrace@localhost'
 
-##
-## Token for the Telegram bot that will be sending notifications to Telegram channels.
-## Required if you are planning to use Telegram for notifications.
-##
+# -----------------------------------------------------------------------------
+# Telemetry Data Processing Configuration
+# -----------------------------------------------------------------------------
+
+# Spans (distributed tracing data)
+spans:
+  # Processing parallelism (default: GOMAXPROCS)
+  #max_threads: 10
+
+  # Batch size for database insertions
+  #max_insert_size: 10000
+
+  # Buffer capacity - spans are dropped when full
+  # Default scales with max_threads
+  #max_buffered_records: 100e3
+
+# Span links
+span_links:
+  # Uncomment to disable span link processing
+  #disabled: true
+
+  #max_threads: 10              # Processing parallelism
+  #max_insert_size: 10000       # Batch size for insertions
+  #max_buffered_records: 100e3  # Buffer capacity
+
+# Application logs
+logs:
+  #max_threads: 10              # Processing parallelism
+  #max_insert_size: 10000       # Batch size for insertions
+  #max_buffered_records: 100e3  # Buffer capacity
+
+# Custom events
+events:
+  #max_threads: 10              # Processing parallelism
+  #max_insert_size: 10000       # Batch size for insertions
+  #max_buffered_records: 100e3  # Buffer capacity
+
+# Metrics and time series data
+metrics:
+  #max_threads: 10              # Processing parallelism
+  #max_insert_size: 10000       # Batch size for insertions
+  #max_buffered_records: 100e3  # Buffer capacity
+
+  # Cumulative to delta conversion capacity
+  #max_cumulative_timeseries: 1e6
+
+# -----------------------------------------------------------------------------
+# Query & Performance Limits
+# -----------------------------------------------------------------------------
+# Trace query resource limits
+trace:
+  # Maximum spans to select per query
+  #query_limit: 200_000
+
+  # Maximum memory usage per query (bytes)
+  #max_memory_usage_bytes: 200_000_000
+
+# -----------------------------------------------------------------------------
+# Feature Modules
+# -----------------------------------------------------------------------------
+
+# Monitoring and alerting system
+alerting:
+  # Uncomment to disable monitoring and notifications
+  #disabled: true
+
+# Service dependency graph generation
+service_graph:
+  # Uncomment to disable service graph processing
+  #disabled: true
+
+# JavaScript error sourcemap processing
+# Note: Requires internet access to download source maps
+sourcemaps:
+  # Uncomment to disable sourcemap processing
+  #disabled: true
+
+# -----------------------------------------------------------------------------
+# External Services
+# -----------------------------------------------------------------------------
+
+# Internal telemetry collection
+uptrace_go:
+  # Uncomment to disable internal telemetry
+  #disabled: true
+  dsn: {{ uptrace_dsn }}
+
+# Telegram bot for notifications
+# Setup guide: https://sendpulse.com/knowledge-base/chatbot/telegram/create-telegram-chatbot
 telegram:
-  bot_token: ""
+  bot_token: ''                 # Telegram bot token for notifications
 
-##
-## Logging configuration options.
-##
+# -----------------------------------------------------------------------------
+# System Configuration
+# -----------------------------------------------------------------------------
+
+# Application logging
 logging:
-  # Valid values: DEBUG, INFO, WARN, ERROR.
+  # Available levels: DEBUG, INFO, WARN, ERROR
   level: INFO
 
-##
-## License options. A license is required to enable premium features.
-## See https://uptrace.dev/get/hosted#premium-edition for details.
-##
+# Premium features license
+# Details: https://uptrace.dev/get/hosted#premium-edition
 license:
-  key: '{{ uptrace_license }}'
+  key: ''                       # Premium license key

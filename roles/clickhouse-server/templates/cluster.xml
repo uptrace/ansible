@@ -14,11 +14,11 @@
     <uptrace_all>
       <secret>{{ secret }}</secret>
 
-  {% for shard in ch_shards %}
+  {% for ch_shard in ch_shards %}
       <shard>
         <internal_replication>true</internal_replication>
-    {% for host in groups.clickhouse %}
-      {% if hostvars[host].ch_cluster == ch_cluster and hostvars[host].ch_shard == shard.name %}
+    {% for host in groups.clickhouse_server %}
+      {% if hostvars[host].ch_shard == ch_shard %}
         <replica>
           <host>{{ host }}</host>
           <port>9440</port>
@@ -34,12 +34,11 @@
     <{{ ch_cluster }}>
       <secret>{{ secret }}</secret>
 
-  {% for shard in ch_shards %}
+  {% for ch_shard in ch_shards %}
       <shard>
-        <weight>{{ shard.weight|default(1) }}</weight>
         <internal_replication>true</internal_replication>
-    {% for host in groups.clickhouse %}
-      {% if hostvars[host].ch_cluster == ch_cluster and hostvars[host].ch_shard == shard.name %}
+    {% for host in groups.clickhouse_server %}
+      {% if hostvars[host].ch_shard == ch_shard %}
         <replica>
           <host>{{ host }}</host>
           <port>9440</port>

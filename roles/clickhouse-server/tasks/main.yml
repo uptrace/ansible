@@ -1,8 +1,14 @@
+---
+- set_fact:
+    ch_shards:
+      "{{ groups.clickhouse_server | map('extract', hostvars, 'ch_shard') | unique | sort }}"
+  tags: [config]
+
 - import_tasks: config.yml
   tags: [config]
 
-- name: start ClickHouse
-  systemd: name=clickhouse-server state=started daemon_reload=true
+- name: Flush handlers
+  meta: flush_handlers
 
-- name: create database
+- name: Create database
   command: clickhouse-client -q "CREATE DATABASE IF NOT EXISTS {{ ch_db_name }}"

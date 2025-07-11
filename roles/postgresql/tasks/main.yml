@@ -1,3 +1,4 @@
+---
 - set_fact:
     pgbouncer_connections: '{{ [2, ansible_processor_vcpus*2] | max }}'
     shared_buffers: '{{ ansible_memtotal_mb // 10 }}'
@@ -17,12 +18,6 @@
 - name: start PostgreSQL
   service: name=postgresql state=started enabled=yes
 
-- name: install postgresql_* playbooks dependencies
-  apt: name=python3-psycopg2
-
-- import_tasks: setup_db.yml
-  when: pg_primary_host is not defined
-
 - name: upload postgresql.conf
   template:
     src: '{{ pg_version }}/postgresql.conf'
@@ -31,22 +26,7 @@
     owner: postgres
     group: postgres
   tags: [config]
-
-- name: standby.signal
-  file:
-    path: /var/lib/postgresql/{{ pg_version }}/main/standby.signal
-    state: touch
-    mode: '0644'
-    owner: postgres
-    group: postgres
-  when: pg_primary_host is defined
-
-- import_tasks: pgbouncer.yml
-  tags: [pgbouncer]
-
-- import_tasks: pgbackrest.yml
-  when: pgbackrest is defined
-  tags: [pgbackrest]
+  notify: Restart PostgreSQL
 
 - name: upload pg_hba.conf
   template:
@@ -56,7 +36,27 @@
     group: postgres
     mode: 0640
   tags: [config]
+  notify: Restart PostgreSQL
 
-- name: restart PostgreSQL
-  service: name=postgresql state=restarted
-  tags: [config, systemd]
+- name: standby.signal
+  file:
+    path: /var/lib/postgresql/{{ pg_version }}/main/standby.signal
+    state: touch
+    mode: '0644'
+    owner: postgres
+    group: postgres
+  when: pg_primary_host is defined
+  notify: Restart PostgreSQL
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- import_tasks: setup_db.yml
+  when: pg_primary_host is not defined
+
+- import_tasks: pgbouncer.yml
+  tags: [pgbouncer]
+
+- import_tasks: pgbackrest.yml
+  when: pgbackrest is defined
+  tags: [pgbackrest]

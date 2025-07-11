@@ -1,8 +1,9 @@
-- name: create replicator user
+---
+- name: Create replicator user
   postgresql_user: name=replicator role_attr_flags=REPLICATION
   become_user: postgres
 
-- name: create db user
+- name: Create db user
   postgresql_user:
     name: '{{ pg_db_user }}'
     password: '{{ pg_db_password }}'
@@ -10,7 +11,7 @@
     encrypted: yes
   become_user: postgres
 
-- name: create database
+- name: Create database
   postgresql_db:
     name: '{{ pg_db_name }}'
     owner: postgres
@@ -18,7 +19,7 @@
     template: template0
   become_user: postgres
 
-- name: grant privileges
+- name: Grant privileges
   postgresql_privs:
     db: postgres
     privs: ALL

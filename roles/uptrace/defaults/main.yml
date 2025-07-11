@@ -8,3 +8,5 @@ listen_grpc_addr: ':4317'
 certmagic_enabled: false
 certmagic_staging_ca: false
 telegram_bot_token: ''
+
+seed_data: {}

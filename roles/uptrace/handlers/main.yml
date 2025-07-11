@@ -1,0 +1,5 @@
+---
+- name: Restart Uptrace
+  service:
+    name: uptrace
+    state: restarted

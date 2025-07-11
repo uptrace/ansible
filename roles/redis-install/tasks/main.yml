@@ -1,10 +1,10 @@
-- name: enable vm.overcommit_memory
-  sysctl: name=vm.overcommit_memory value=1
-  tags: [system]
-
+---
 - command: /usr/local/bin/redis-server -v
   register: cmd
   ignore_errors: true
 
 - import_tasks: install.yml
   when: cmd is failed or redis_version not in cmd.stdout
+
+- name: Enable vm.overcommit_memory
+  sysctl: name=vm.overcommit_memory value=1
