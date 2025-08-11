@@ -1,4 +1,4 @@
-uptrace_version: '2.0.0'
+uptrace_version: '2.0.1'
 uptrace_license: ''
 
 env: hosted
@@ -29,6 +29,9 @@ telegram_bot_token: ''
 self_monitoring_dsn: https://FIXME@api.uptrace.dev?grpc=4317
 
 seed_data:
+  update: true # Whether to update existing resources by key
+  delete: true # Whether to delete disappeared resources by key
+
   # Default users created on first startup
   users:
     - key: user1                 # Internal reference key (used in relationships below)
