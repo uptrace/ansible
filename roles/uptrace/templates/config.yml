@@ -40,7 +40,7 @@ site:
   # - Different security policies
   # - CDN/edge deployment scenarios
   # If empty, defaults to site.url
-  #ingest_url: http://ingest.uptrace.local
+  ingest_url: {{ ingest_url }}
 
 # -----------------------------------------------------------------------------
 # Network Listeners
@@ -106,7 +106,7 @@ ch_cluster:
   # Enable ClickHouse replicated tables for high availability
   # Requires cluster configuration with multiple replicas
   # Provides automatic failover and data redundancy
-  replicated: {{ ch_distributed }}
+  replicated: {{ ch_replicated }}
 
   # Enable ClickHouse distributed tables for horizontal scaling
   # Requires cluster configuration across multiple shards
@@ -120,7 +120,7 @@ ch_cluster:
     - replicas:
         {% for host in groups['clickhouse_server'] %}
         {% if hostvars[host].ch_shard == ch_shard %}
-        - addr: {{ host }}:9000
+        - addr: {{ host }}:{{ ch_port }}
           database: {{ ch_db_name }}
           user: {{ ch_db_user }}
           password: {{ ch_db_password }}
@@ -136,11 +136,8 @@ ch_cluster:
 
           # TLS configuration for secure database connections
           # Uncomment for production deployments with SSL/TLS
-          #tls:
-            #cert_file: /etc/clickhouse-server/ssl//client.crt
-            #key_file: /etc/clickhouse-server/ssl//client.key
-            #ca_file: /etc/clickhouse-server/ssl/ca.crt
-            #insecure_skip_verify: true  # WARNING: Only use for self-signed certificates
+          tls:
+            {{ ch_tls|to_nice_yaml(indent=2)|indent(12) }}
       {% endif %}
     {% endfor %}
   {% endfor %}
@@ -209,7 +206,7 @@ redis_cache:
   # Redis authentication credentials
   username: ""                  # Redis username (Redis 6.0+)
   password: ""                  # Redis password
-  db: 0                         # Redis database number (0-15)
+  db: {{ redis_db }}            # Redis database number (0-15)
 
   # TLS configuration for secure Redis connections
   # Recommended for production deployments
@@ -221,9 +218,9 @@ redis_cache:
 # -----------------------------------------------------------------------------
 # Automatic certificate issuance and renewal via Let's Encrypt ACME protocol
 certmagic:
-  enabled: {{ certmagic_enabled }}         # Enable Let's Encrypt certificate management
-  staging_ca: {{ certmagic_staging_ca }}   # Use staging environment for testing
-  http_challenge_addr: :80                 # Address for HTTP-01 challenge validation
+  enabled: {{ certmagic_enabled }}                          # Enable Let's Encrypt certificate management
+  staging_ca: {{ certmagic_staging_ca }}                    # Use staging environment for testing
+  http_challenge_addr: {{ certmagic_http_challenge_addr }}  # Address for HTTP-01 challenge validation
 
 # -----------------------------------------------------------------------------
 # Email Configuration

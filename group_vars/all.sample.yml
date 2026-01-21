@@ -1,4 +1,4 @@
-uptrace_version: '2.0.1'
+uptrace_version: '2.1.0-beta'
 uptrace_license: ''
 
 env: hosted
@@ -9,6 +9,7 @@ site_url: http://uptrace.local
 certmagic_enabled: false
 # Whether to use Let's Encrypt staging environment.
 certmagic_staging_ca: true
+certmagic_http_challenge_addr: ':80'
 
 listen_http_addr: ':80'
 listen_grpc_addr: ':4317'
@@ -25,6 +26,8 @@ pg_db_name: uptrace
 pg_db_user: uptrace
 pg_db_password: FIXME
 
+redis_db: 0
+
 telegram_bot_token: ''
 self_monitoring_dsn: https://FIXME@api.uptrace.dev?grpc=4317
 
@@ -34,51 +37,51 @@ seed_data:
 
   # Default users created on first startup
   users:
-    - key: user1                 # Internal reference key (used in relationships below)
-      name: Admin                # Display name in UI
+    - key: user1 # Internal reference key (used in relationships below)
+      name: Admin # Display name in UI
       email: admin@uptrace.local # Login email (must be unique)
-      password: admin            # Plain text password (CHANGE THIS IMMEDIATELY!)
+      password: admin # Plain text password (CHANGE THIS IMMEDIATELY!)
       email_confirmed: true
 
   # API tokens for user authentication
   # These tokens can be used for API access and programmatic operations
   user_tokens:
-    - key: user_token1           # Internal reference key
-      user_key: user1            # References user.key above
-      token: user1_secret        # API token value (CHANGE THIS!)
+    - key: user_token1 # Internal reference key
+      user_key: user1 # References user.key above
+      token: user1_secret # API token value (CHANGE THIS!)
 
   # Organizations for multi-tenant deployments
   # Organizations group users and projects together
   orgs:
-    - key: org1                  # Internal reference key
-      name: Org1                 # Organization display name
+    - key: org1 # Internal reference key
+      name: Org1 # Organization display name
 
   # Organization membership and roles
   # Defines which users belong to which organizations
   org_users:
-    - key: org_user1             # Internal reference key
-      org_key: org1              # References org.key above
-      user_key: user1            # References user.key above
-      role: owner                # Role: owner, admin, or member
+    - key: org_user1 # Internal reference key
+      org_key: org1 # References org.key above
+      user_key: user1 # References user.key above
+      role: owner # Role: owner, admin, or member
 
   # Projects contain telemetry data and are isolated from each other
   # Each project has its own spans, logs, metrics, and dashboards
   projects:
-    - key: project1              # Internal reference key
-      name: Project1             # Project display name
-      org_key: org1              # References org.key above
+    - key: project1 # Internal reference key
+      name: Project1 # Project display name
+      org_key: org1 # References org.key above
 
   # Project-specific tokens for telemetry data ingestion
   # These tokens are used in OTLP DSN strings for sending data
   project_tokens:
-    - key: project_token1        # Internal reference key
-      project_key: project1      # References project.key above
-      token: project1_secret     # Token value for DSN (CHANGE THIS!)
+    - key: project_token1 # Internal reference key
+      project_key: project1 # References project.key above
+      token: project1_secret # Token value for DSN (CHANGE THIS!)
 
   # Project user permissions
   # Controls who can access and modify project data
   project_users:
-    - key: project_user1         # Internal reference key
-      project_key: project1      # References project.key above
-      org_user_key: org_user1    # References org_user.key above
-      perm_level: admin          # Permission level: admin, editor, or viewer
+    - key: project_user1 # Internal reference key
+      project_key: project1 # References project.key above
+      org_user_key: org_user1 # References org_user.key above
+      perm_level: admin # Permission level: admin, editor, or viewer

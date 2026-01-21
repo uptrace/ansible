@@ -38,7 +38,7 @@
   <compression>
     <case>
       <method>zstd</method>
-      <level>1</level>
+      <level>3</level>
     </case>
   </compression>
 
