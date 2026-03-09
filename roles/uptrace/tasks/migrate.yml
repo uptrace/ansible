@@ -11,8 +11,5 @@
 - name: Migrate ClickHouse
   command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml ch migrate'
 
-- name: Create ClickHouse distributed tables
-  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml ch dist'
-
 - name: Seed database
   command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml db seed'
