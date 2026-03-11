@@ -257,7 +257,7 @@ spans:
   # Batch size for database insertions
   # Larger batches improve throughput but increase memory usage
   # Tune based on your ingestion rate and memory constraints
-  #max_insert_size: 10000
+  #ch_max_insert_size: 10000
 
   # In-memory buffer capacity for incoming spans
   # Spans are dropped when buffer is full (check metrics for drops)
@@ -272,28 +272,28 @@ span_links:
   #disabled: true
 
   #max_threads: 10              # Processing parallelism
-  #max_insert_size: 10000       # Batch size for insertions
+  #ch_max_insert_size: 10000       # Batch size for insertions
   #max_buffered_records: 100e3  # Buffer capacity
 
 # Application logs
 # Structured and unstructured log data from applications
 logs:
   #max_threads: 10              # Processing parallelism
-  #max_insert_size: 10000       # Batch size for insertions
+  #ch_max_insert_size: 10000       # Batch size for insertions
   #max_buffered_records: 100e3  # Buffer capacity
 
 # Custom events
 # Application-specific events and business metrics
 events:
   #max_threads: 10              # Processing parallelism
-  #max_insert_size: 10000       # Batch size for insertions
+  #ch_max_insert_size: 10000       # Batch size for insertions
   #max_buffered_records: 100e3  # Buffer capacity
 
 # Metrics and time series data
 # Numerical measurements over time (counters, gauges, histograms)
 metrics:
   #max_threads: 10              # Processing parallelism
-  #max_insert_size: 10000       # Batch size for insertions
+  #ch_max_insert_size: 10000       # Batch size for insertions
   #max_buffered_records: 100e3  # Buffer capacity
 
   # Memory limit for cumulative to delta conversion
