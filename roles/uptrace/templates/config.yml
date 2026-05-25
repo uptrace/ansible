@@ -75,7 +75,10 @@ auth:
   # Disable built-in username/password authentication
   # Useful when using only SSO providers (OAuth, SAML, etc.)
   # Note: SSO authentication methods will remain available
-  #disabled: true
+  disabled: {{ auth_disabled }}
+
+  sign_up_disabled: {{ auth_sign_up_disabled }}
+  sign_in_disabled: {{ auth_sign_in_disabled }}
 
   # Email domain restriction for user registration
   # Only users with email addresses matching this regex can register/login
