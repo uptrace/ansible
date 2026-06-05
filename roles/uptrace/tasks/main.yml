@@ -20,7 +20,9 @@
     group: uptrace
     mode: 0755
     force: true
-  notify: Restart Uptrace
+  notify:
+    - Restart Uptrace
+    - Restart Uptrace Worker
 
 - name: Check Uptrace binary
   command: /usr/local/bin/uptrace version
@@ -37,7 +39,9 @@
     owner: uptrace
     group: uptrace
     mode: 0644
-  notify: Restart Uptrace
+  notify:
+    - Restart Uptrace
+    - Restart Uptrace Worker
   tags: [config]
 
 - import_tasks: systemd.yml

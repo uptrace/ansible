@@ -1,0 +1,19 @@
+[Unit]
+Description = uptrace worker
+After       = network.target
+
+[Service]
+Type  = simple
+User  = uptrace
+Group = uptrace
+
+ExecStart = /usr/local/bin/uptrace -config=/etc/uptrace/config.yml worker
+Restart    = always
+RestartSec = 1s
+
+WorkingDirectory = /var/lib/uptrace
+LimitNOFILE      = 64000
+SyslogIdentifier = uptrace-worker
+
+[Install]
+WantedBy = multi-user.target

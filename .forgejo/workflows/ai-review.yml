@@ -1,0 +1,144 @@
+name: AI Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  BASE_REF: ${{ github.event.pull_request.base.ref }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+
+jobs:
+  reviews:
+    name: ${{ matrix.artifact }}
+    runs-on: uptrace-ci
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - reviewer: codex
+            label: Codex
+            artifact: codex-review
+            model: gpt-5.5
+            effort: xhigh
+            output_file: .ai-review/review-1.md
+          - reviewer: claude
+            label: Claude
+            artifact: claude-review
+            model: claude-sonnet-4-6
+            effort: high
+            output_file: .ai-review/review-2.md
+          - reviewer: gemini
+            label: Gemini
+            artifact: gemini-review
+            model: gemini-3-flash-preview
+            output_file: .ai-review/review-3.md
+
+    steps:
+      - name: Checkout pull request
+        uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout AI review action
+        uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          repository: uptrace/ai-review-action
+          ref: v1.6.9
+          path: .ai-review/actions/ai-review-action
+          github-server-url: https://git.uptrace.dev
+          token: ${{ secrets.AI_REVIEW_ACTION_TOKEN }}
+          persist-credentials: false
+
+      - name: Run Codex review
+        if: ${{ matrix.reviewer == 'codex' }}
+        timeout-minutes: 20
+        uses: ./.ai-review/actions/ai-review-action/codex-review
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        with:
+          model: ${{ matrix.model }}
+          effort: ${{ matrix.effort }}
+          output-file: ${{ matrix.output_file }}
+
+      - name: Run Claude review
+        if: ${{ matrix.reviewer == 'claude' }}
+        timeout-minutes: 20
+        uses: ./.ai-review/actions/ai-review-action/claude-review
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        with:
+          model: ${{ matrix.model }}
+          effort: ${{ matrix.effort }}
+          output-file: ${{ matrix.output_file }}
+
+      - name: Run Gemini review
+        if: ${{ matrix.reviewer == 'gemini' }}
+        timeout-minutes: 20
+        uses: ./.ai-review/actions/ai-review-action/gemini-review
+        env:
+          GEMINI_OAUTH_CREDS_JSON: ${{ secrets.GEMINI_OAUTH_CREDS_JSON }}
+        with:
+          model: ${{ matrix.model }}
+          output-file: ${{ matrix.output_file }}
+
+      - name: Upload ${{ matrix.label }} review
+        if: always()
+        uses: https://data.forgejo.org/actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.output_file }}
+
+  combined-review:
+    runs-on: uptrace-ci
+    if: always()
+    needs:
+      - reviews
+
+    steps:
+      - name: Checkout pull request
+        uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download review artifacts
+        uses: https://data.forgejo.org/actions/download-artifact@v3
+        continue-on-error: true
+        with:
+          path: .ai-review/reviews
+
+      - name: Collect review files
+        run: |
+          mkdir -p .ai-review/combined
+          if [ -d .ai-review/reviews ]; then
+            find .ai-review/reviews -type f -name 'review-*.md' -exec cp {} .ai-review/combined/ \;
+          fi
+
+      - name: Checkout AI review action
+        uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          repository: uptrace/ai-review-action
+          ref: v1.6.9
+          path: .ai-review/actions/ai-review-action
+          github-server-url: https://git.uptrace.dev
+          token: ${{ secrets.AI_REVIEW_ACTION_TOKEN }}
+          persist-credentials: false
+
+      - name: Combine and post AI review
+        uses: ./.ai-review/actions/ai-review-action/combine-review
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+          FORGEJO_API_URL: ${{ forgejo.api_url }}
+          FORGEJO_REPOSITORY: ${{ forgejo.repository }}
+          FORGEJO_TOKEN: ${{ forgejo.token }}
+          REPO_WRITE_TOKEN: ${{ secrets.REPO_WRITE_TOKEN }}
+        with:
+          review-files: .ai-review/combined/review-*.md
+          persist-codex-auth: 'true'

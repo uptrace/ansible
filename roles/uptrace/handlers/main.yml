@@ -3,3 +3,9 @@
   service:
     name: uptrace
     state: restarted
+
+- name: Restart Uptrace Worker
+  service:
+    name: uptrace-worker
+    state: restarted
+  when: groups.kafka | default([]) | length > 0

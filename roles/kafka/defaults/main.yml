@@ -1,0 +1,17 @@
+kafka_version: '4.2.1'
+kafka_scala_version: '2.13'
+kafka_install_base: /opt
+kafka_versioned_dir: '{{ kafka_install_base }}/kafka_{{ kafka_scala_version }}-{{ kafka_version }}'
+kafka_install_dir: '{{ kafka_install_base }}/kafka'
+kafka_data_dir: /var/lib/kafka
+kafka_user: kafka
+kafka_group: kafka
+kafka_port: 9092
+kafka_controller_port: 9093
+kafka_node_id: 1
+kafka_heap_opts: '-Xmx1G -Xms1G'
+kafka_max_message_bytes: 10485760
+kafka_mirror: https://downloads.apache.org/kafka
+kafka_binary_url:
+  '{{ kafka_mirror }}/{{ kafka_version }}/kafka_{{ kafka_scala_version }}-{{ kafka_version
+  }}.tgz'

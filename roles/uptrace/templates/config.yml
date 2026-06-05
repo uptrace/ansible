@@ -116,6 +116,17 @@ ch_cluster:
   # Only available in Premium Edition
   distributed: {{ ch_distributed }}
 
+  {% if groups.kafka | default([]) | length > 0 %}
+  # Broker addresses for ClickHouse's own Kafka table engine. ClickHouse
+  # connects to these brokers directly (independently of the Uptrace worker
+  # above) to consume topics into Kafka-engine tables. Point this at the same
+  # brokers as the top-level `kafka` section.
+  kafka:
+    brokers:
+      {%- for host in groups.kafka %}
+      - '{{ host }}:{{ hostvars[host].kafka_port | default(9092) }}'
+      {%- endfor %}
+  {% endif %}
   # Database shards configuration
   # Each shard can have multiple replicas for redundancy
   shards:
@@ -215,6 +226,25 @@ redis_cache:
   # Recommended for production deployments
   #tls:
   #  insecure_skip_verify: true  # WARNING: Only use for self-signed certificates
+
+{% if groups.kafka | default([]) | length > 0 %}
+# -----------------------------------------------------------------------------
+# Kafka Configuration
+# -----------------------------------------------------------------------------
+# Message queue used to decouple ingestion from storage. When configured,
+# Uptrace publishes incoming telemetry (spans, logs, metrics) to Kafka instead
+# of writing to ClickHouse synchronously, and the separate `uptrace worker`
+# process consumes these topics and inserts the data into ClickHouse.
+# This smooths out ingestion spikes and lets ingestion and storage scale
+# independently. Omit this section to write to ClickHouse directly (no worker).
+kafka:
+  # Kafka broker addresses (host:port) for the bootstrap connection.
+  # The client discovers the rest of the cluster from any reachable broker.
+  brokers:
+  {%- for host in groups.kafka %}
+    - '{{ host }}:{{ hostvars[host].kafka_port | default(9092) }}'
+  {%- endfor %}
+{% endif %}
 
 # -----------------------------------------------------------------------------
 # SSL/TLS Certificate Management

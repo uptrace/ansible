@@ -28,6 +28,14 @@ pg_db_password: FIXME
 
 redis_db: 0
 
+# Kafka is optional. Define a `kafka` group in the inventory to enable it: this
+# turns on the Uptrace worker process (drains Kafka queues) and the ClickHouse
+# Kafka engine. Brokers are derived from the `kafka` group hosts on :9092.
+#
+# Fixed KRaft cluster id used to format Kafka storage (keep constant for idempotent re-runs)
+# Generate your own with: /opt/kafka/bin/kafka-storage.sh random-uuid
+kafka_cluster_id: MkU3OEVBNTcwNTJENDM2Qk # CHANGE THIS!
+
 telegram_bot_token: ''
 self_monitoring_dsn: https://FIXME@api.uptrace.dev?grpc=4317
 

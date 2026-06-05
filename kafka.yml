@@ -1,0 +1,5 @@
+- hosts: kafka
+  become: yes
+
+  roles:
+    - kafka

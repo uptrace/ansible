@@ -5,3 +5,43 @@
     dest: /lib/systemd/system/{{ item }}
   loop:
     - uptrace.service
+
+- name: Upload uptrace worker systemd service
+  template:
+    src: uptrace-worker.service
+    dest: /lib/systemd/system/uptrace-worker.service
+  when: groups.kafka | default([]) | length > 0
+  register: uptrace_worker_unit
+  notify: Restart Uptrace Worker
+
+- name: Enable and start uptrace worker
+  systemd:
+    name: uptrace-worker
+    state: started
+    enabled: yes
+    # Only reload when the unit file changed (e.g. first install or a template
+    # update); avoids a redundant daemon-reload on idempotent runs.
+    daemon_reload: '{{ uptrace_worker_unit is changed }}'
+  when: groups.kafka | default([]) | length > 0
+
+# When Kafka is removed from the inventory, tear down a previously installed
+# worker so the host is not left running a misconfigured service.
+- name: Stop and disable uptrace worker when Kafka is disabled
+  systemd:
+    name: uptrace-worker
+    state: stopped
+    enabled: no
+  failed_when: false
+  when: groups.kafka | default([]) | length == 0
+
+- name: Remove uptrace worker unit when Kafka is disabled
+  file:
+    path: /lib/systemd/system/uptrace-worker.service
+    state: absent
+  register: uptrace_worker_unit_removed
+  when: groups.kafka | default([]) | length == 0
+
+- name: Reload systemd after removing uptrace worker unit
+  systemd:
+    daemon_reload: yes
+  when: uptrace_worker_unit_removed is changed

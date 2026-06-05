@@ -1,0 +1,93 @@
+---
+- name: Install Java 17
+  apt:
+    name: openjdk-17-jre-headless
+    update_cache: yes
+  tags: [install]
+
+- name: Create kafka group
+  group:
+    name: '{{ kafka_group }}'
+    system: yes
+
+- name: Create kafka user
+  user:
+    name: '{{ kafka_user }}'
+    group: '{{ kafka_group }}'
+    system: yes
+    shell: /usr/sbin/nologin
+    home: '{{ kafka_install_dir }}'
+    create_home: no
+
+- name: Create kafka directories
+  file:
+    path: '{{ item }}'
+    state: directory
+    owner: '{{ kafka_user }}'
+    group: '{{ kafka_group }}'
+    mode: 0755
+  loop:
+    - '{{ kafka_data_dir }}'
+
+- name: Download Kafka
+  get_url:
+    url: '{{ kafka_binary_url }}'
+    dest: /tmp/kafka_{{ kafka_scala_version }}-{{ kafka_version }}.tgz
+  tags: [install]
+
+- name: Extract Kafka
+  unarchive:
+    src: /tmp/kafka_{{ kafka_scala_version }}-{{ kafka_version }}.tgz
+    dest: '{{ kafka_install_base }}'
+    remote_src: yes
+    owner: '{{ kafka_user }}'
+    group: '{{ kafka_group }}'
+    creates: '{{ kafka_versioned_dir }}/bin/kafka-server-start.sh'
+  tags: [install]
+
+- name: Symlink current Kafka
+  file:
+    src: '{{ kafka_versioned_dir }}'
+    dest: '{{ kafka_install_dir }}'
+    state: link
+  notify: Restart Kafka
+  tags: [install]
+
+- name: Upload Kafka config
+  template:
+    src: server.properties
+    dest: '{{ kafka_install_dir }}/config/server.properties'
+    owner: '{{ kafka_user }}'
+    group: '{{ kafka_group }}'
+    mode: 0644
+  notify: Restart Kafka
+  tags: [config]
+
+- name: Upload Kafka systemd unit
+  template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart Kafka
+  tags: [systemd]
+
+- name: Check if KRaft storage is formatted
+  stat:
+    path: '{{ kafka_data_dir }}/meta.properties'
+  register: kafka_meta
+
+- name: Format KRaft storage
+  command:
+    '{{ kafka_install_dir }}/bin/kafka-storage.sh format -t {{ kafka_cluster_id }} -c {{
+    kafka_install_dir }}/config/server.properties'
+  become_user: '{{ kafka_user }}'
+  when: not kafka_meta.stat.exists
+
+- name: Start Kafka
+  systemd:
+    name: kafka
+    state: started
+    enabled: yes
+    daemon_reload: yes
