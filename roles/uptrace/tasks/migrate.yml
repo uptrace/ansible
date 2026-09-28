@@ -1,15 +1,14 @@
 ---
-- name: Init PostgreSQL migrations
-  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml pg init'
-
-- name: Init ClickHouse migrations
-  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml ch init'
-
-- name: Migrate PostgreSQL
-  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml pg migrate'
-
-- name: Migrate ClickHouse
-  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml ch migrate'
+# The binary of the new release is installed on every host before this task,
+# and the primary host runs the migrations with it.
+#
+# With --restart, `migrate up` asks the serve and worker processes of each host
+# to stop at each restart row. They exit with status 75, and systemd starts
+# the installed binary again (Restart=always in both units). A process of a
+# release before the instance registry cannot hear the request: the handlers
+# restart it at the end of the play.
+- name: Migrate the databases
+  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml migrate up --restart'
 
 - name: Seed database
   command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml db seed'
