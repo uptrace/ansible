@@ -1,0 +1,15 @@
+---
+# The play runs each task on every host before the next task, so these tasks
+# start the services only after the primary host has run migrate.yml. On an
+# upgrade the services already run, and these tasks change nothing:
+# `migrate up --restart` and the handlers restart them.
+- name: Start uptrace
+  systemd:
+    name: uptrace
+    state: started
+
+- name: Start uptrace worker
+  systemd:
+    name: uptrace-worker
+    state: started
+  when: groups.kafka | default([]) | length > 0
