@@ -63,3 +63,6 @@
 - import_tasks: migrate.yml
   when: primary is defined
   tags: [migrate]
+
+- import_tasks: start.yml
+  tags: [systemd, migrate]
