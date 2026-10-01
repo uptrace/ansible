@@ -148,10 +148,11 @@ ch_cluster:
           # Prevents long-running queries from consuming resources
           max_execution_time: 15s
 
+          {% if ch_tls %}
           # TLS configuration for secure database connections
-          # Uncomment for production deployments with SSL/TLS
           tls:
             {{ ch_tls|to_nice_yaml(indent=2)|indent(12) }}
+          {% endif %}
       {% endif %}
     {% endfor %}
   {% endfor %}
