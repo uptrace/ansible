@@ -1,4 +1,19 @@
 ---
+# Uptrace refuses to start with an empty service.secret or with the FIXME
+# placeholder, so stop the play before it changes a host.
+- name: Check the Uptrace secret
+  assert:
+    that:
+      - secret is defined
+      - secret is string
+      - secret | trim | length > 0
+      - secret != 'FIXME'
+    fail_msg: >-
+      Set `secret` in group_vars to a random value, e.g. from `openssl rand -hex 32`.
+      Uptrace refuses an empty secret and the FIXME placeholder.
+    quiet: true
+  tags: [always]
+
 - name: Create uptrace user
   user: name=uptrace groups=sudo shell=/bin/bash
 
