@@ -2,7 +2,10 @@ uptrace_version: '2.1.0-beta.7'
 uptrace_license: ''
 
 env: hosted
-secret: FIXME
+# A random secret, e.g. from `openssl rand -hex 32`. Uptrace uses it as
+# service.secret and refuses an empty value or FIXME. The ClickHouse cluster
+# and the pgBackRest repository cipher use it too.
+#secret:
 
 site_url: http://uptrace.local
 # Whether to enable Let's Encrypt.
