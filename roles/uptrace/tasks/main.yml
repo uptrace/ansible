@@ -51,9 +51,10 @@
   template:
     src: config.yml
     dest: /etc/uptrace/config.yml
-    owner: uptrace
+    # The config holds secrets. The service reads it through the uptrace group.
+    owner: root
     group: uptrace
-    mode: 0644
+    mode: '0640'
   notify:
     - Restart Uptrace
     - Restart Uptrace Worker
