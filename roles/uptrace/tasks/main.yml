@@ -66,15 +66,31 @@
 - import_tasks: logging.yml
   tags: [logging]
 
+# The serve and worker processes also delete expired data on their own
+# schedule. This job is a second pass. "retention check" was removed in v2.1.
 - name: Configure cron to delete old data
   cron:
     name: retention_check
     job:
       /usr/bin/flock /var/lock/uptrace_retention.lock /usr/local/bin/uptrace
-      -config=/etc/uptrace/config.yml retention check
+      -config=/etc/uptrace/config.yml storage retention
     weekday: '6' # Saturday
     hour: '0'
     minute: '15'
+
+# The old release keeps serving while the expand steps run.
+- name: Apply the expand steps
+  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml migrate up --before-release-change'
+  when: primary is defined
+  tags: [migrate]
+
+# Restart each process whose binary or config changed, on every host, before
+# the backfill. A process of v2.0.x or of a v2.1.0 beta cannot hear the restart
+# request of "migrate up --restart", and the backfill must not run while one
+# serves.
+- name: Restart Uptrace on the new release
+  meta: flush_handlers
+  tags: [migrate]
 
 - import_tasks: migrate.yml
   when: primary is defined
