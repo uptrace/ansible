@@ -17,6 +17,11 @@ telegram_bot_token: ''
 
 seed_data: {}
 
+# The batch pause ratio of `migrate up`: the pause after each batch of a
+# backfill, as a share of the time the batch took. Empty passes no flag, so
+# each migration keeps its own ratio.
+uptrace_migrate_batch_pause_ratio: ''
+
 redis_db: 0
 ch_port: 9440
 ch_tls: null
