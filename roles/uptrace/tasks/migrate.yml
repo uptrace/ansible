@@ -6,8 +6,15 @@
 # With --restart, `migrate up` asks the serve and worker processes of each host
 # to stop at each restart row. They exit with status 75, and systemd starts
 # the installed binary again (Restart=always in both units).
+#
+# uptrace_migrate_batch_pause_ratio, when it is set, passes --batch-pause-ratio.
+# Unset, each migration keeps its own ratio.
 - name: Migrate the databases
-  command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml migrate up --restart'
+  command: >-
+    /usr/local/bin/uptrace -config=/etc/uptrace/config.yml migrate up --restart
+    {%- if uptrace_migrate_batch_pause_ratio not in ['', none] %}
+    --batch-pause-ratio {{ uptrace_migrate_batch_pause_ratio | string | quote }}
+    {%- endif %}
 
 - name: Seed database
   command: '/usr/local/bin/uptrace -config=/etc/uptrace/config.yml db seed'

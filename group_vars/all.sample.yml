@@ -1,5 +1,8 @@
 uptrace_version: '2.1.0-beta.7'
 uptrace_license: ''
+# The pause after each batch of a backfill, as a share of the time the batch
+# took. Unset keeps the ratio of each migration. 0 runs the batches back to back.
+#uptrace_migrate_batch_pause_ratio: 0.5
 
 env: hosted
 # A random secret, e.g. from `openssl rand -hex 32`. Uptrace uses it as
