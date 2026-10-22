@@ -68,9 +68,26 @@
 
 # The serve and worker processes also delete expired data on their own
 # schedule. This job is a second pass. "retention check" was removed in v2.1.
-- name: Configure cron to delete old data
+#
+# Earlier versions named the job retention_check, which other deployments on
+# the same host use too. Remove that entry only when it runs this config.
+- name: Check for the old retention cron entry
+  shell: >-
+    crontab -l 2>/dev/null | grep -A1 -x '#Ansible: retention_check'
+    | grep -qF -- '-config=/etc/uptrace/config.yml'
+  register: old_retention_cron
+  changed_when: false
+  failed_when: false
+
+- name: Remove the old retention cron entry
   cron:
     name: retention_check
+    state: absent
+  when: old_retention_cron.rc == 0
+
+- name: Configure cron to delete old data
+  cron:
+    name: uptrace_retention
     job:
       /usr/bin/flock /var/lock/uptrace_retention.lock /usr/local/bin/uptrace
       -config=/etc/uptrace/config.yml storage retention
