@@ -42,6 +42,50 @@
 - name: Check Uptrace binary
   command: /usr/local/bin/uptrace version
 
+# The files in ch_tls usually belong to the ClickHouse setup, e.g.
+# root:clickhouse 0640, which the uptrace user cannot read. Uptrace reads the
+# TLS files when it loads the config and refuses to start without them, so
+# install copies it can read and point the config at them. A changed original
+# changes its copy and restarts Uptrace.
+- name: Find the ClickHouse TLS files
+  set_fact:
+    ch_tls_files: >-
+      {{ (ch_tls or {}) | dict2items | selectattr('key', 'match', '.+_file$')
+         | selectattr('value') | list }}
+    uptrace_ch_tls: '{{ ch_tls }}'
+  tags: [config]
+
+- name: Point the config at the copies of the ClickHouse TLS files
+  set_fact:
+    uptrace_ch_tls: >-
+      {{ uptrace_ch_tls | combine({item.key: '/etc/uptrace/tls/clickhouse-'
+         ~ (item.key | regex_replace('_file$', '')) ~ '.pem'}) }}
+  loop: '{{ ch_tls_files }}'
+  loop_control:
+    label: '{{ item.key }}'
+  tags: [config]
+
+- name: Create the Uptrace TLS directory
+  file: path=/etc/uptrace/tls state=directory owner=root group=uptrace mode=0750
+  when: ch_tls_files | length > 0
+  tags: [config]
+
+- name: Copy the ClickHouse TLS files for the uptrace user
+  copy:
+    src: '{{ item.value }}'
+    dest: '{{ uptrace_ch_tls[item.key] }}'
+    remote_src: true
+    owner: root
+    group: uptrace
+    mode: '0640'
+  loop: '{{ ch_tls_files }}'
+  loop_control:
+    label: '{{ item.key }}'
+  notify:
+    - Restart Uptrace
+    - Restart Uptrace Worker
+  tags: [config]
+
 - set_fact:
     ch_shards:
       "{{ groups.clickhouse_server | map('extract', hostvars, 'ch_shard') | unique | sort }}"
@@ -94,6 +138,14 @@
     weekday: '6' # Saturday
     hour: '0'
     minute: '15'
+
+# Load the config as the service loads it, so a file the uptrace user cannot
+# read stops the play here, not the service in a restart loop.
+- name: Validate the Uptrace config as the uptrace user
+  command: /usr/local/bin/uptrace --config=/etc/uptrace/config.yml config validate
+  become_user: uptrace
+  changed_when: false
+  tags: [config, migrate]
 
 # The old release keeps serving while the expand steps run.
 - name: Apply the expand steps
