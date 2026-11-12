@@ -24,4 +24,11 @@ uptrace_migrate_batch_pause_ratio: ''
 
 redis_db: 0
 ch_port: 9440
+# The TLS block of each ClickHouse replica, e.g.
+#   ch_tls:
+#     ca_file: /etc/clickhouse/certs/ca-cert.pem
+#     cert_file: /etc/clickhouse/certs/client-cert.pem
+#     key_file: /etc/clickhouse/certs/client-key.pem
+# The role copies each *_file into /etc/uptrace/tls/ as root:uptrace 0640, so
+# the uptrace user reads the copies whatever the mode of the originals.
 ch_tls: null
