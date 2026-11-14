@@ -117,15 +117,11 @@ ch_cluster:
   distributed: {{ ch_distributed }}
 
   {% if groups.kafka | default([]) | length > 0 %}
-  # Broker addresses for ClickHouse's own Kafka table engine. ClickHouse
-  # connects to these brokers directly (independently of the Uptrace worker
-  # above) to consume topics into Kafka-engine tables. Point this at the same
-  # brokers as the top-level `kafka` section.
+  # Write ClickHouse through Kafka: the API publishes the rows to the click_*
+  # topics of the top-level `kafka.brokers`, and the Uptrace worker inserts
+  # them into ClickHouse.
   kafka:
-    brokers:
-      {%- for host in groups.kafka %}
-      - '{{ host }}:{{ hostvars[host].kafka_port | default(9092) }}'
-      {%- endfor %}
+    enabled: true
   {% endif %}
   # Database shards configuration
   # Each shard can have multiple replicas for redundancy
